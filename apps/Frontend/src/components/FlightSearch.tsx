@@ -1,6 +1,14 @@
-
+import { useState } from 'react'
 
 function FlightSearch() {
+  // State for trip type selection
+  const [selectedTripType, setSelectedTripType] = useState('round-trip')
+
+  // Handle trip type selection
+  const handleTripTypeClick = (tripType: string) => {
+    setSelectedTripType(tripType)
+  }
+
   return (
     <div className="flight-search-container">
       {/* Main search card */}
@@ -8,13 +16,22 @@ function FlightSearch() {
         
         {/* Trip type selection */}
         <div className="trip-type-section">
-          <div className="trip-type active">Round trip</div>
-          <div className="trip-type">One way</div>
-          <div className="trip-type">Multi-city</div>
+          <div 
+            className={`trip-type ${selectedTripType === 'round-trip' ? 'active' : ''}`}
+            onClick={() => handleTripTypeClick('round-trip')}
+          >
+            Round trip
+          </div>
+          <div 
+            className={`trip-type ${selectedTripType === 'one-way' ? 'active' : ''}`}
+            onClick={() => handleTripTypeClick('one-way')}
+          >
+            One way
+          </div>
         </div>
 
         {/* Flight search form */}
-        <div className="search-form">
+        <div className={`search-form ${selectedTripType === 'one-way' ? 'one-way' : ''}`}>
           {/* From field */}
           <div className="form-field">
             <label>Leaving from</label>
@@ -47,14 +64,16 @@ function FlightSearch() {
             </div>
           </div>
 
-          {/* Return date */}
-          <div className="form-field">
-            <label>Returning</label>
-            <div className="input-container">
-              <span className="icon">📅</span>
-              <input type="date" />
+          {/* Return date - only show for round trip */}
+          {selectedTripType === 'round-trip' && (
+            <div className="form-field">
+              <label>Returning</label>
+              <div className="input-container">
+                <span className="icon">📅</span>
+                <input type="date" />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Search button */}
           <div className="search-button-container">
