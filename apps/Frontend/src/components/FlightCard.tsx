@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { type Flight, type Trip } from '../types/flightTypes'
 
 // Flight component interface
@@ -30,7 +31,7 @@ const FlightRoute = ({ flight, departureDate }: { flight: Flight; departureDate:
   </div>
 )
 
-const FlightCard = ({ trip }: FlightProps) => {
+const FlightCard = memo(({ trip }: FlightProps) => {
   return (
     <div className="flight-card">
       <div className="flight-content">
@@ -65,6 +66,6 @@ const FlightCard = ({ trip }: FlightProps) => {
       </div>
     </div>
   )
-}
+})
 
 export default FlightCard
