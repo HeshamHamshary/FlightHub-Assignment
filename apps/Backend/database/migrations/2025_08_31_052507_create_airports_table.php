@@ -16,12 +16,11 @@ return new class extends Migration
             $table->char('iata_code', 3)->nullable()->index();
             $table->string('name', 160);
             $table->string('city', 120)->nullable();
-            $table->string('country', 2)->nullable(); // ISO-3166 alpha-2
             $table->decimal('lat', 9, 6)->nullable();
             $table->decimal('lon', 9, 6)->nullable();
             $table->string('timezone', 64)->nullable();
+            $table->char('city_code', 3)->nullable()->index();
             $table->timestamps();
-
             $table->index(['name', 'city']);
         });
     }
