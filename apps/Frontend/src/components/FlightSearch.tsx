@@ -1,12 +1,22 @@
 import { useState } from 'react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 
 function FlightSearch() {
   // State for trip type selection
   const [selectedTripType, setSelectedTripType] = useState('round-trip')
+  
+  // State for dates
+  const [departureDate, setDepartureDate] = useState<Date | null>(null)
+  const [returnDate, setReturnDate] = useState<Date | null>(null)
 
   // Handle trip type selection
   const handleTripTypeClick = (tripType: string) => {
     setSelectedTripType(tripType)
+    // Clear return date when switching to one-way
+    if (tripType === 'one-way') {
+      setReturnDate(null)
+    }
   }
 
   return (
@@ -60,7 +70,16 @@ function FlightSearch() {
             <label>Departing</label>
             <div className="input-container">
               <span className="icon">📅</span>
-              <input type="date" />
+              <DatePicker
+                selected={departureDate}
+                onChange={(date) => setDepartureDate(date)}
+                placeholderText="Select date"
+                dateFormat="EEE, MMM dd, yyyy"
+                minDate={new Date()}
+                maxDate={returnDate || undefined}
+                className="date-input"
+                onKeyDown={(e) => e.preventDefault()}
+              />
             </div>
           </div>
 
@@ -70,7 +89,15 @@ function FlightSearch() {
               <label>Returning</label>
               <div className="input-container">
                 <span className="icon">📅</span>
-                <input type="date" />
+                <DatePicker
+                  selected={returnDate}
+                  onChange={(date) => setReturnDate(date)}
+                  placeholderText="Select date"
+                  dateFormat="EEE, MMM dd, yyyy"
+                  minDate={departureDate || new Date()}
+                  className="date-input"
+                  onKeyDown={(e) => e.preventDefault()}
+                />
               </div>
             </div>
           )}

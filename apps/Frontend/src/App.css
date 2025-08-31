@@ -8,6 +8,8 @@ html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 #root {
@@ -16,6 +18,14 @@ html, body {
   padding: 0;
   text-align: center;
   width: 100%;
+  min-height: 100vh;
+  overflow: visible;
+}
+
+.app-container {
+  min-height: 100vh;
+  overflow: visible;
+  position: relative;
 }
 
 #background-banner {
@@ -75,6 +85,7 @@ html, body {
   margin-top: -200px;
   position: relative;
   z-index: 10;
+  overflow: visible;
 }
 
 .search-card {
@@ -85,6 +96,8 @@ html, body {
   width: 100%;
   max-width: 1200px;
   margin-top: 2rem;
+  position: relative;
+  overflow: visible;
 }
 
 /* Navigation tabs */
@@ -274,7 +287,102 @@ html, body {
   color: #666;
 }
 
-/* Responsiveness */
+/* DatePicker Custom Styles */
+.date-input {
+  border: none;
+  outline: none;
+  flex: 1;
+  margin-left: 0.5rem;
+  background: transparent;
+  color: black;
+  cursor: pointer;
+  font-size: 0.9rem;
+  caret-color: transparent;
+}
+
+.date-input::placeholder {
+  color: #999;
+}
+
+/* React DatePicker Customization */
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000 !important;
+  position: absolute !important;
+}
+
+.react-datepicker-popper {
+  z-index: 1000 !important;
+}
+
+.react-datepicker__header {
+  background-color: white;
+  border-bottom: 1px solid #eee;
+  border-radius: 8px 8px 0 0;
+}
+
+.react-datepicker__current-month {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.react-datepicker__day-name {
+  color: #666;
+  font-weight: 500;
+  width: 2rem;
+  line-height: 2rem;
+}
+
+.react-datepicker__day {
+  width: 2rem;
+  line-height: 2rem;
+  margin: 0.2rem;
+  border-radius: 4px;
+  color: #333;
+}
+
+.react-datepicker__day:hover {
+  background-color: #f0f8ff;
+  color: #007bff;
+}
+
+.react-datepicker__day--selected {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+  background-color: transparent !important;
+  color: #333 !important;
+}
+
+.react-datepicker__day--today {
+  background-color: transparent !important;
+  color: #333 !important;
+  font-weight: normal !important;
+}
+
+.react-datepicker__day--disabled {
+  color: #ccc;
+}
+
+.react-datepicker__navigation {
+  top: 8px;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: #666;
+}
+
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: #007bff;
+}
+
+/* Responsive adjustments */
 @media (max-width: 1104px) {
   .flight-search-container {
     padding: 0 1rem;
