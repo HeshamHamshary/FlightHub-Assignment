@@ -25,6 +25,9 @@ function FlightSearch() {
     departureDate: false,
     returnDate: false
   })
+  
+  // State for button interactions
+  const [isSwapActive, setIsSwapActive] = useState(false)
 
   // Handle trip type selection
   const handleTripTypeClick = (tripType: string) => {
@@ -33,6 +36,17 @@ function FlightSearch() {
     if (tripType === 'one-way') {
       setReturnDate(null)
     }
+  }
+
+  // Handle swap button click
+  const handleSwap = () => {
+    const tempCity = fromCity
+    setFromCity(toCity)
+    setToCity(tempCity)
+    
+    // Add active state briefly
+    setIsSwapActive(true)
+    setTimeout(() => setIsSwapActive(false), 150)
   }
 
   // Handle search button click
@@ -113,7 +127,7 @@ function FlightSearch() {
           </div>
 
           {/* Swap button */}
-          <div className="swap-button">🔄</div>
+          <div className={`swap-button ${isSwapActive ? 'active' : ''}`} onClick={handleSwap}>🔄</div>
 
           {/* To field */}
           <div className="form-field">
