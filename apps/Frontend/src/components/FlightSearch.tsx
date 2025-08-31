@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+import { searchFlights, type FlightSearchParams } from '../services/flightApi'
+import { type Trip } from '../types/flightTypes'
 
 // Reusable error message component
 const ErrorMessage = ({ show }: { show: boolean }) => {
@@ -8,7 +10,12 @@ const ErrorMessage = ({ show }: { show: boolean }) => {
   return <span className="error-message">* Required field</span>
 }
 
-function FlightSearch() {
+interface FlightSearchProps {
+  onSearchResults: (trips: Trip[]) => void
+  onSearching: (isSearching: boolean) => void
+}
+
+function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
   // State for trip type selection
   const [selectedTripType, setSelectedTripType] = useState('round-trip')
   
@@ -50,7 +57,7 @@ function FlightSearch() {
   }
 
   // Handle search button click
-  const handleSearch = () => {
+  const handleSearch = async () => {
     // Reset errors
     setErrors({
       fromCity: false,
@@ -76,15 +83,26 @@ function FlightSearch() {
       return
     }
     
-    const searchData = {
-      tripType: selectedTripType,
-      fromCity: fromCity,
-      toCity: toCity,
-      departureDate: departureDate,
-      returnDate: returnDate
+    // Prepare search parameters
+    const searchParams: FlightSearchParams = {
+      tripType: selectedTripType as 'one-way' | 'round-trip',
+      fromAirport: fromCity,
+      toAirport: toCity,
+      departureDate: departureDate?.toISOString().split('T')[0], // YYYY-MM-DD format
+      returnDate: returnDate?.toISOString().split('T')[0], // YYYY-MM-DD format
+      passengers: 1
     }
     
-    console.log('Search Data:', searchData)
+    try {
+      onSearching(true)
+      const trips = await searchFlights(searchParams)
+      onSearchResults(trips)
+    } catch (error) {
+      console.error('Search failed:', error)
+      // You could add error handling here (show toast, etc.)
+    } finally {
+      onSearching(false)
+    }
   }
 
   return (
