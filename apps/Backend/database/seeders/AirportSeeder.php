@@ -38,7 +38,7 @@ class AirportSeeder extends Seeder
             $city = trim($row['municipality'] ?? '') ?: null;
             $timezone = trim($row['tz_database_time_zone'] ?? '') ?: null;
 
-            // Derive cityCode
+            // Derive city code
             $cityCode = $metroMap[$iata] ?? $iata;
 
             Airport::updateOrCreate(
