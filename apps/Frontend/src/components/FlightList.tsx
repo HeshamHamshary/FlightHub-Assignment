@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import FlightCard from './FlightCard'
 import { type Trip} from '../types/flightTypes'
 import noFlightsImage from '../assets/airplane.svg'
@@ -7,8 +8,13 @@ function FlightList() {
   // Mock trips
   const trips: Trip[] = []
 
-  // Sort trips by total price (lowest first)
-  const sortedTrips = [...trips].sort((a, b) => a.totalPrice - b.totalPrice)
+  // Memoize sorted trips to prevent unnecessary re-sorting
+  const sortedTrips = useMemo(() => {
+    return [...trips].sort((a, b) => a.totalPrice - b.totalPrice)
+  }, [trips])
+
+  // Memoize the empty state check
+  const hasNoTrips = useMemo(() => sortedTrips.length === 0, [sortedTrips.length])
 
   return (
     <div className="flight-list-container">
@@ -19,7 +25,7 @@ function FlightList() {
 
       {/* Flight cards */}
       <div className="flight-cards">
-        {sortedTrips.length === 0 ? (
+        {hasNoTrips ? (
           <div className="no-flights-message">
             <img className="logos" src={noFlightsImage} alt="No flights found" />
             <h3>Flights will show up here!</h3>
