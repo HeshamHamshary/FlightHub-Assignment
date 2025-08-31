@@ -15,7 +15,6 @@ export interface FlightProps {
     arrival: string
     departureTime: string
     arrivalTime: string
-    layover?: string
     duration: string
     price: number
   }
@@ -25,7 +24,6 @@ export interface FlightProps {
     arrival: string
     departureTime: string
     arrivalTime: string
-    layover?: string
     duration: string
     price: number
   }
@@ -47,7 +45,6 @@ const FlightRoute = ({ flight }: { flight: FlightProps['outboundFlight'] | Fligh
       
       <div className="flight-path">
         <div className="duration">{flight?.duration}</div>
-        {flight?.layover && <div className="layover">{flight.layover}</div>}
       </div>
       
       <div className="arrival">
