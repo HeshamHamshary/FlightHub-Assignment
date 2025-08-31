@@ -76,6 +76,12 @@ html, body {
   position: relative;
 }
 
+.logos {
+  width: 100px;
+  height: 100px;
+}
+  
+
 /* Flight Search Component Styles */
 .flight-search-container {
   display: flex;
