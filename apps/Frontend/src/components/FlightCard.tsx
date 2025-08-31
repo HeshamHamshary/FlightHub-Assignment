@@ -7,7 +7,7 @@ export interface FlightProps {
 }
 
 // Reusable Flight Route component
-const FlightRoute = ({ flight, departureDate }: { flight: Flight; departureDate: string }) => (
+const FlightRoute = ({ flight }: { flight: Flight }) => (
   <div className="flight-route">
     <div className="airline-info">
       <span className="airline-name">{flight.airline.name}</span>
@@ -20,6 +20,7 @@ const FlightRoute = ({ flight, departureDate }: { flight: Flight; departureDate:
       </div>
       
       <div className="flight-path">
+        <div className="departure-date">{flight.departureDate}</div>
         <div className="duration">20h 40m</div>
       </div>
       
@@ -38,14 +39,13 @@ const FlightCard = memo(({ trip }: FlightProps) => {
         {/* Flight Details */}
         <div className="flight-details">
           {trip.type === 'one-way' ? (
-            <FlightRoute flight={trip.flights[0].flight} departureDate={trip.flights[0].departureDate} />
+            <FlightRoute flight={trip.flights[0]} />
           ) : (
             <div className="round-trip-flights">
-              {trip.flights.map((flightSegment, index) => (
+              {trip.flights.map((flight, index) => (
                 <FlightRoute 
                   key={index}
-                  flight={flightSegment.flight} 
-                  departureDate={flightSegment.departureDate} 
+                  flight={flight} 
                 />
               ))}
             </div>

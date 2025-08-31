@@ -12,6 +12,7 @@ class Flight
         public Airline $airline,
         public Airport $departureAirport,
         public Airport $arrivalAirport,
+        public string $departureDate,
         public string $departureTime,
         public string $arrivalTime,
         public float $price

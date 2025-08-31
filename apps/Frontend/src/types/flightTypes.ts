@@ -40,6 +40,8 @@ export interface Flight {
   departureAirport: Airport
   /** Reference to the arrival airport */
   arrivalAirport: Airport
+  /** Departure date */
+  departureDate: string
   /** Departure time in the departure airport's timezone */
   departureTime: string
   /** Arrival time in the arrival airport's timezone */
@@ -56,13 +58,8 @@ export interface Trip {
   id: string
   /** Type of trip */
   type: 'one-way' | 'round-trip'
-  /** Array of flights with their departure dates */
-  flights: {
-    /** Reference to the flight */
-    flight: Flight
-    /** Date of departure */
-    departureDate: string
-  }[]
+  /** Array of flights */
+  flights: Flight[]
   /** Total price of all flights */
   totalPrice: number
   /** Trip creation timestamp */

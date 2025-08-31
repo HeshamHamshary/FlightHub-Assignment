@@ -12,7 +12,7 @@ class FlightController extends Controller
 {
     public function search(Request $request)
     {
-        // Access query params like ?num_adults=1
+        // Access query params 
         $params = $request->all();
 
         // Mock data
@@ -26,80 +26,47 @@ class FlightController extends Controller
         $mockLAX = new Airport('LAX', 'Los Angeles International', 'Los Angeles', 33.9416, -118.4085, 'America/Los_Angeles', 'LAX');
 
         // Mock flights
-        $outboundFlight1 = new Flight('301', $mockAirline, $mockYUL, $mockPEK, '07:30', '16:10', 841.39);
-        $returnFlight1 = new Flight('302', $mockAirline, $mockPEK, $mockYUL, '18:05', '00:36', 512.30);
-        $flight2 = new Flight('401', $mockWestJet, $mockYYZ, $mockLAX, '09:15', '12:45', 325.50);
-        $outboundFlight3 = new Flight('501', $mockWestJet, $mockYVR, $mockYYZ, '14:20', '21:45', 298.75);
-        $returnFlight3 = new Flight('502', $mockWestJet, $mockYYZ, $mockYVR, '08:30', '15:55', 298.75);
-        $flight4 = new Flight('601', $mockAirline, $mockYUL, $mockYVR, '11:45', '14:20', 456.80);
+        $outboundFlight1 = new Flight('301', $mockAirline, $mockYUL, $mockPEK, '2024-01-15', '07:30', '16:10', 841.39);
+        $returnFlight1 = new Flight('302', $mockAirline, $mockPEK, $mockYUL, '2024-01-22', '18:05', '00:36', 512.30);
+        $flight2 = new Flight('401', $mockWestJet, $mockYYZ, $mockLAX, '2024-01-20', '09:15', '12:45', 325.50);
+        $outboundFlight3 = new Flight('501', $mockWestJet, $mockYVR, $mockYYZ, '2024-01-18', '14:20', '21:45', 298.75);
+        $returnFlight3 = new Flight('502', $mockWestJet, $mockYYZ, $mockYVR, '2024-01-25', '08:30', '15:55', 298.75);
+        $flight4 = new Flight('601', $mockAirline, $mockYUL, $mockYVR, '2024-01-12', '11:45', '14:20', 456.80);
 
         // Mock trips
         $trips = [
             new Trip(
                 '1',
                 'one-way',
-                [
-                    [
-                        'flight' => $outboundFlight1,
-                        'departureDate' => '2024-01-15'
-                    ]
-                ],
+                [$outboundFlight1],
                 841.39,
                 now()->toISOString()
             ),
             new Trip(
                 '2',
                 'round-trip',
-                [
-                    [
-                        'flight' => $outboundFlight1,
-                        'departureDate' => '2024-01-15'
-                    ],
-                    [
-                        'flight' => $returnFlight1,
-                        'departureDate' => '2024-01-22'
-                    ]
-                ],
+                [$outboundFlight1, $returnFlight1],
                 1353.69,
                 now()->toISOString()
             ),
             new Trip(
                 '3',
                 'one-way',
-                [
-                    [
-                        'flight' => $flight2,
-                        'departureDate' => '2024-01-20'
-                    ]
-                ],
+                [$flight2],
                 325.50,
                 now()->toISOString()
             ),
             new Trip(
                 '4',
                 'round-trip',
-                [
-                    [
-                        'flight' => $outboundFlight3,
-                        'departureDate' => '2024-01-18'
-                    ],
-                    [
-                        'flight' => $returnFlight3,
-                        'departureDate' => '2024-01-25'
-                    ]
-                ],
+                [$outboundFlight3, $returnFlight3],
                 597.50,
                 now()->toISOString()
             ),
             new Trip(
                 '5',
                 'one-way',
-                [
-                    [
-                        'flight' => $flight4,
-                        'departureDate' => '2024-01-12'
-                    ]
-                ],
+                [$flight4],
                 456.80,
                 now()->toISOString()
             )
