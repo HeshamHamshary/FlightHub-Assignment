@@ -5,11 +5,15 @@ use Illuminate\Database\Seeder;
 use League\Csv\Reader;
 use App\Models\Airport;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class AirportSeeder extends Seeder
 {
     public function run(): void
     {
+        // Make sure IATA code is unique for when generating flights
+        DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS airports_iata_code_unique ON airports(iata_code)');
+
         // Minimal city mapping
         $metroMap = [
             // Montreal
