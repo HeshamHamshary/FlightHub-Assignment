@@ -1,4 +1,3 @@
-import BackgroundImage from '../assets/background.jpeg'
 import '../App.css'
 function Header() {
 

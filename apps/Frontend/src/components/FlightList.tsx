@@ -1,60 +1,100 @@
-import Flight, { FlightType } from './Flight'
+import FlightCard from './FlightCard'
+import { type Trip, type Flight, type Airline, type Airport } from '../types/flightTypes'
 
 // Main FlightList component
 function FlightList() {
 
-  // Mock flight data
-  const flights = [
+  // Mock data
+  const mockAirline: Airline = {
+    iataCode: 'AC',
+    name: 'Air Canada'
+  }
+
+  const mockYUL: Airport = {
+    iataCode: 'YUL',
+    name: 'Pierre Elliott Trudeau International',
+    city: 'Montreal',
+    latitude: 45.4706,
+    longitude: -73.7408,
+    timezone: 'America/Montreal',
+    cityCode: 'YMQ'
+  }
+
+  const mockPEK: Airport = {
+    iataCode: 'PEK',
+    name: 'Beijing Capital International',
+    city: 'Beijing',
+    latitude: 40.0799,
+    longitude: 116.6031,
+    timezone: 'Asia/Shanghai',
+    cityCode: 'BJS'
+  }
+
+  const mockYVR: Airport = {
+    iataCode: 'YVR',
+    name: 'Vancouver International',
+    city: 'Vancouver',
+    latitude: 49.1967,
+    longitude: -123.1815,
+    timezone: 'America/Vancouver',
+    cityCode: 'YVR'
+  }
+
+  // Mock flights
+  const outboundFlight: Flight = {
+    flightNumber: '301',
+    airline: mockAirline,
+    departureAirport: mockYUL,
+    arrivalAirport: mockPEK,
+    departureTime: '07:30',
+    arrivalTime: '16:10',
+    price: 841.39,
+  }
+
+  const returnFlight: Flight = {
+    flightNumber: '302',
+    airline: mockAirline,
+    departureAirport: mockPEK,
+    arrivalAirport: mockYUL,
+    departureTime: '18:05',
+    arrivalTime: '00:36',
+    price: 512.30,
+  }
+
+  // Mock trips
+  const trips: Trip[] = [
     {
-      id: 1,
-      type: FlightType.ONE_WAY,
-      outboundFlight: {
-        airline: 'Air Canada',
-        departure: 'YUL',
-        arrival: 'PEK',
-        departureTime: '7:30 AM',
-        arrivalTime: '4:10 PM +1',
-        layover: '2h 30m in YVR',
-        duration: '20h 40m',
-        price: 841.39
-      }
+      id: '1',
+      type: 'one-way',
+      flights: [
+        {
+          flight: outboundFlight,
+          departureDate: '2024-01-15'
+        }
+      ],
+      totalPrice: 841.39,
+      createdAt: new Date().toISOString()
     },
     {
-      id: 2,
-      type: FlightType.ROUND_TRIP,
-      outboundFlight: {
-        airline: 'Air Canada',
-        departure: 'YUL',
-        arrival: 'PEK',
-        departureTime: '7:30 AM',
-        arrivalTime: '4:10 PM +1',
-        layover: '2h 30m in YVR',
-        duration: '20h 40m',
-        price: 841.39
-      },
-      returnFlight: {
-        airline: 'Air Canada',
-        departure: 'PEK',
-        arrival: 'YUL',
-        departureTime: '6:05 PM',
-        arrivalTime: '12:36 AM +1',
-        layover: '2h 30m in YVR',
-        duration: '18h 31m',
-        price: 512.30
-      }
+      id: '2',
+      type: 'round-trip',
+      flights: [
+        {
+          flight: outboundFlight,
+          departureDate: '2024-01-15'
+        },
+        {
+          flight: returnFlight,
+          departureDate: '2024-01-22'
+        }
+      ],
+      totalPrice: 1353.69,
+      createdAt: new Date().toISOString()
     }
   ]
 
-  // Sort flights by total price (lowest first)
-  const sortedFlights = [...flights].sort((a, b) => {
-    const aTotalPrice = a.type === FlightType.ONE_WAY 
-      ? a.outboundFlight.price 
-      : a.outboundFlight.price + (a.returnFlight?.price || 0)
-    const bTotalPrice = b.type === FlightType.ONE_WAY 
-      ? b.outboundFlight.price 
-      : b.outboundFlight.price + (b.returnFlight?.price || 0)
-    return aTotalPrice - bTotalPrice
-  })
+  // Sort trips by total price (lowest first)
+  const sortedTrips = [...trips].sort((a, b) => a.totalPrice - b.totalPrice)
 
   return (
     <div className="flight-list-container">
@@ -65,16 +105,10 @@ function FlightList() {
 
       {/* Flight cards */}
       <div className="flight-cards">
-        {sortedFlights.map((flight) => (
-          <Flight
-            key={flight.id}
-            type={flight.type}
-            outboundFlight={flight.outboundFlight}
-            returnFlight={flight.returnFlight}
-            totalPrice={flight.type === FlightType.ONE_WAY 
-              ? flight.outboundFlight.price 
-              : flight.outboundFlight.price + (flight.returnFlight?.price || 0)
-            }
+        {sortedTrips.map((trip) => (
+          <FlightCard
+            key={trip.id}
+            trip={trip}
           />
         ))}
       </div>
