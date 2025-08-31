@@ -316,6 +316,200 @@ html, body {
   color: #666;
 }
 
+/* FlightList Component Styles */
+.flight-list-container {
+  padding: 2rem;
+  background: white;
+  min-height: 100vh;
+}
+
+.flight-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.flight-list-header h2 {
+  color: #333;
+  margin: 0;
+}
+
+/* Flight Cards */
+.flight-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.flight-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+}
+
+.flight-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  flex: 1;
+}
+
+.flight-details {
+  flex: 1;
+}
+
+.flight-route {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.airline-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.airline-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.route-info {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.departure, .arrival {
+  text-align: center;
+  min-width: 80px;
+}
+
+.time {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.airport {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.flight-path {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  text-align: center;
+}
+
+.duration {
+  font-weight: 500;
+  color: #333;
+}
+
+.layover {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+.round-trip-flights {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.round-trip-flights .flight-route {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1rem;
+}
+
+.round-trip-flights .flight-route:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Flight Actions */
+.flight-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+  min-width: 200px;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.price-info {
+  text-align: right;
+}
+
+.price {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.taxes {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: auto;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #f8f9fa;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.btn-secondary:hover {
+  background: #e9ecef;
+  border-color: #007bff;
+}
+
+
+
 /* DatePicker Custom Styles */
 .date-input {
   border: none;
@@ -465,5 +659,23 @@ html, body {
   .search-button {
     width: 100%;
     margin-top: 1rem;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .flight-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .flight-actions {
+    align-items: stretch;
+    min-width: auto;
+  }
+  
+  .route-info {
+    flex-direction: column;
+    gap: 1rem;
   }
 }
