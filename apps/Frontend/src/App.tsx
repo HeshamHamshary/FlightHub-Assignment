@@ -1,7 +1,6 @@
 import Header from './components/Header'
 import FlightSearch from './components/FlightSearch'
 import FlightList from './components/FlightList'
-import Footer from './components/Footer'
 function App() {
 
   return (
@@ -13,7 +12,6 @@ function App() {
       
       <FlightList />
       
-      <Footer />
     </div>
   )
 }
