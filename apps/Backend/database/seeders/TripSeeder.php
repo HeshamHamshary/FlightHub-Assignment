@@ -45,20 +45,27 @@ class TripSeeder extends Seeder
                     $selectedFlightIds = [$flightId];
                     $totalPrice = $flightPrices[$flightId];
                 } else {
-                    // Pick two random flights for round-trip
-                    $firstIdx = random_int(0, $nFlights - 1);
-                    $secondIdx = random_int(0, $nFlights - 1);
+                    // For round-trip: pick first flight, then find a return flight
+                    $firstFlightId = $flightIds[random_int(0, $nFlights - 1)];
                     
-                    // Ensure we don't pick the same flight twice
-                    while ($secondIdx === $firstIdx) {
-                        $secondIdx = random_int(0, $nFlights - 1);
+                    // Get the first flight details to find return flight
+                    $firstFlight = Flight::find($firstFlightId);
+                    $departureAirport = $firstFlight->departure_airport;
+                    $arrivalAirport = $firstFlight->arrival_airport;
+                    
+                    // Find a return flight from arrival to departure
+                    $returnFlight = Flight::where('departure_airport', $arrivalAirport)
+                                        ->where('arrival_airport', $departureAirport)
+                                        ->inRandomOrder()
+                                        ->first();
+                    
+                    // If no return flight found, skip this round-trip
+                    if (!$returnFlight) {
+                        continue;
                     }
                     
-                    $selectedFlightIds = [
-                        $flightIds[$firstIdx],
-                        $flightIds[$secondIdx]
-                    ];
-                    $totalPrice = $flightPrices[$flightIds[$firstIdx]] + $flightPrices[$flightIds[$secondIdx]];
+                    $selectedFlightIds = [$firstFlightId, $returnFlight->id];
+                    $totalPrice = $flightPrices[$firstFlightId] + $flightPrices[$returnFlight->id];
                 }
 
                 $rows[] = [
