@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import FlightCard from './FlightCard'
 import { type Trip } from '../types/flightTypes'
-import noFlightsImage from '../../public/airplane.svg'
+const noFlightsImage = '/airplane.svg'
 
 interface FlightListProps {
   trips: Trip[]

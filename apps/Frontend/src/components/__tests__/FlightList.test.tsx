@@ -32,9 +32,6 @@ jest.mock('../FlightCard', () => {
   }
 })
 
-// Mock the airplane SVG import
-jest.mock('../../public/airplane.svg', () => 'airplane-icon.svg')
-
 /*
  * ================================================================
  * TEST DATA - Sample Trips
