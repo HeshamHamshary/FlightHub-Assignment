@@ -189,7 +189,7 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
                 placeholderText="Select date"
                 dateFormat="EEE, MMM dd, yyyy"
                 minDate={new Date()}
-                maxDate={returnDate || undefined}
+                maxDate={returnDate || new Date(2026, 0, 1)}
                 className="date-input"
                 onKeyDown={(e) => e.preventDefault()}
               />
@@ -209,6 +209,7 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
                   placeholderText="Select date"
                   dateFormat="EEE, MMM dd, yyyy"
                   minDate={departureDate || new Date()}
+                  maxDate={new Date(2026, 0, 1)}
                   className="date-input"
                   onKeyDown={(e) => e.preventDefault()}
                 />
