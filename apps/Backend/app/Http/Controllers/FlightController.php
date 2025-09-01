@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Types\Airline;
-use App\Types\Airport;
-use App\Types\Flight;
-use App\Types\Trip;
+use Illuminate\Support\Facades\Log;
+use App\Models\Trip;
+use App\Models\Flight;
 
 class FlightController extends Controller
 {
@@ -15,67 +14,122 @@ class FlightController extends Controller
         // Access query params 
         $params = $request->all();
 
-        // Mock data
-        $mockAirline = new Airline('AC', 'Air Canada');
-        $mockWestJet = new Airline('WS', 'WestJet');
+        // Start with available trips
+        $query = Trip::available();
 
-        $mockYUL = new Airport('YUL', 'Pierre Elliott Trudeau International', 'Montreal', 45.4706, -73.7408, 'America/Montreal', 'YMQ');
-        $mockPEK = new Airport('PEK', 'Beijing Capital International', 'Beijing', 40.0799, 116.6031, 'Asia/Shanghai', 'BJS');
-        $mockYVR = new Airport('YVR', 'Vancouver International', 'Vancouver', 49.1967, -123.1815, 'America/Vancouver', 'YVR');
-        $mockYYZ = new Airport('YYZ', 'Toronto Pearson International', 'Toronto', 43.6777, -79.6248, 'America/Toronto', 'YYZ');
-        $mockLAX = new Airport('LAX', 'Los Angeles International', 'Los Angeles', 33.9416, -118.4085, 'America/Los_Angeles', 'LAX');
+        // Filter by trip type if specified
+        if (!empty($params['tripType'])) {
+            $query->where('type', $params['tripType']);
+        }
 
-        // Mock flights
-        $outboundFlight1 = new Flight('301', $mockAirline, $mockYUL, $mockPEK, '2024-01-15', '07:30', '16:10', 841.39);
-        $returnFlight1 = new Flight('302', $mockAirline, $mockPEK, $mockYUL, '2024-01-22', '18:05', '00:36', 512.30);
-        $flight2 = new Flight('401', $mockWestJet, $mockYYZ, $mockLAX, '2024-01-20', '09:15', '12:45', 325.50);
-        $outboundFlight3 = new Flight('501', $mockWestJet, $mockYVR, $mockYYZ, '2024-01-18', '14:20', '21:45', 298.75);
-        $returnFlight3 = new Flight('502', $mockWestJet, $mockYYZ, $mockYVR, '2024-01-25', '08:30', '15:55', 298.75);
-        $flight4 = new Flight('601', $mockAirline, $mockYUL, $mockYVR, '2024-01-12', '11:45', '14:20', 456.80);
+        // Get the filtered trips
+        $trips = $query->limit(50)->get();
 
-        // Mock trips
-        $trips = [
-            new Trip(
-                '1',
-                'one-way',
-                [$outboundFlight1],
-                841.39,
-                now()->toISOString()
-            ),
-            new Trip(
-                '2',
-                'round-trip',
-                [$outboundFlight1, $returnFlight1],
-                1353.69,
-                now()->toISOString()
-            ),
-            new Trip(
-                '3',
-                'one-way',
-                [$flight2],
-                325.50,
-                now()->toISOString()
-            ),
-            new Trip(
-                '4',
-                'round-trip',
-                [$outboundFlight3, $returnFlight3],
-                597.50,
-                now()->toISOString()
-            ),
-            new Trip(
-                '5',
-                'one-way',
-                [$flight4],
-                456.80,
-                now()->toISOString()
-            )
-        ];
+        // Collect all flight IDs from trips
+        $allFlightIds = $trips->flatMap(function ($trip) {
+            return $trip->flight_ids ?? [];
+        })->unique()->values();
+
+        // Load all flights in one query
+        $allFlights = Flight::whereIn('id', $allFlightIds)
+            ->with(['airline', 'departureAirport', 'arrivalAirport'])
+            ->get()
+            ->keyBy('id');
+
+        // Filter by flight criteria after loading trips
+        $filteredTrips = $trips->filter(function ($trip) use ($params, $allFlights) {
+            // Get flights for this trip from the pre-loaded collection
+            $flights = collect($trip->flight_ids ?? [])->map(function ($flightId) use ($allFlights) {
+                return $allFlights->get($flightId);
+            })->filter();
+            
+            // Filter out departed flights first
+            $flights = $flights->filter(function ($flight) {
+                $departureDateTime = $flight->departure_date . ' ' . $flight->departure_time;
+                return strtotime($departureDateTime) > time();
+            });
+            
+            if ($flights->isEmpty()) {
+                return false; // Skip trips with no future flights
+            }
+            
+            // Filter by departure airport
+            if (!empty($params['fromAirport'])) {
+                $flights = $flights->where('departure_airport', $params['fromAirport']);
+            }
+            
+            // Filter by arrival airport
+            if (!empty($params['toAirport'])) {
+                $flights = $flights->where('arrival_airport', $params['toAirport']);
+            }
+            
+            // Filter by departure date
+            if (!empty($params['departureDate'])) {
+                $flights = $flights->where('departure_date', $params['departureDate']);
+            }
+            
+            // Filter by return date (for round-trips)
+            if (!empty($params['returnDate']) && $params['tripType'] === 'round-trip') {
+                $flights = $flights->where('departure_date', $params['returnDate']);
+            }
+            
+            return $flights->count() > 0;
+        });
+
+        // Load relationships for the filtered trips
+        $trips = $filteredTrips->map(function ($trip) use ($allFlights) {
+            // Get flights for this trip from the pre-loaded collection
+            $trip->flights = collect($trip->flight_ids ?? [])->map(function ($flightId) use ($allFlights) {
+                return $allFlights->get($flightId);
+            })->filter();
+            return $trip;
+        });
+
+        // Transform trips to match your frontend expectations
+        $formattedTrips = $trips->map(function ($trip) {
+            return [
+                'id' => $trip->id,
+                'type' => $trip->type,
+                'flights' => $trip->flights->map(function ($flight) {
+                    return [
+                        'flightNumber' => $flight->flight_number,
+                        'airline' => [
+                            'iataCode' => $flight->airline->iata_code,
+                            'name' => $flight->airline->name,
+                        ],
+                        'departureAirport' => [
+                            'iataCode' => $flight->departure_airport,
+                            'name' => $flight->departureAirport->name,
+                            'city' => $flight->departureAirport->city,
+                            'latitude' => $flight->departureAirport->latitude,
+                            'longitude' => $flight->departureAirport->longitude,
+                            'timezone' => $flight->departureAirport->timezone,
+                            'cityCode' => $flight->departureAirport->city_code,
+                        ],
+                        'arrivalAirport' => [
+                            'iataCode' => $flight->arrival_airport,
+                            'name' => $flight->arrivalAirport->name,
+                            'city' => $flight->arrivalAirport->city,
+                            'latitude' => $flight->arrivalAirport->latitude,
+                            'longitude' => $flight->arrivalAirport->longitude,
+                            'timezone' => $flight->arrivalAirport->timezone,
+                            'cityCode' => $flight->arrivalAirport->city_code,
+                        ],
+                        'departureDate' => $flight->departure_date,
+                        'departureTime' => $flight->departure_time,
+                        'arrivalTime' => $flight->arrival_time,
+                        'price' => $flight->price,
+                    ];
+                })->toArray(),
+                'totalPrice' => $trip->total_price,
+                'createdAt' => $trip->created_at->toISOString(),
+            ];
+        });
 
         return response()->json([
             'status' => 'ok',
             'query'  => $params,
-            'flights' => $trips,
+            'flights' => $formattedTrips->values(), // Convert to array
         ]);
     }
 }

@@ -21,7 +21,17 @@ class Trip extends Model
     ];
 
     /**
-     * Get the flights for this trip
+     * Get the flights relationship for this trip
+     */
+
+    public function flights()
+    {
+        return Flight::whereIn('id', $this->flight_ids ?? []);
+    }
+
+
+    /**
+     * Get the flights for this trip (accessor for backward compatibility)
      */
     public function getFlightsAttribute()
     {
@@ -38,5 +48,30 @@ class Trip extends Model
     public function setFlightIdsAttribute($value)
     {
         $this->attributes['flight_ids'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Check if any flight in this trip has departed
+     */
+    public function hasDeparted(): bool
+    {
+        $flights = $this->flights;
+        foreach ($flights as $flight) {
+            $departureDateTime = $flight->departure_date . ' ' . $flight->departure_time;
+            if (strtotime($departureDateTime) < time()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Scope to only include trips that haven't departed yet
+     */
+    public function scopeAvailable($query)
+    {
+        // For now, return all trips and filter in PHP
+        // This avoids SQLite JSON issues
+        return $query;
     }
 }
