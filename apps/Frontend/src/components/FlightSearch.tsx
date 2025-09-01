@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { searchFlights, type FlightSearchParams } from '../services/flightApi'
+import { searchFlights, type FlightSearchParams, type PaginationMeta } from '../services/flightApi'
 import { type Trip } from '../types/flightTypes'
 import { MAJOR_AIRPORTS } from '../utils/constants'
 
@@ -12,11 +12,12 @@ const ErrorMessage = ({ show }: { show: boolean }) => {
 }
 
 interface FlightSearchProps {
-  onSearchResults: (trips: Trip[]) => void
+  onSearchResults: (trips: Trip[], meta: PaginationMeta, searchParams: FlightSearchParams) => void
   onSearching: (isSearching: boolean) => void
+  searchParams: FlightSearchParams | null
 }
 
-function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
+function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSearchProps) {
   // State for trip type selection
   const [selectedTripType, setSelectedTripType] = useState('round-trip')
   
@@ -57,6 +58,28 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
     setTimeout(() => setIsSwapActive(false), 150)
   }
 
+  // Handle search - can be called manually or automatically
+  const performSearch = async (customParams?: FlightSearchParams) => {
+    const params = customParams || {
+      tripType: selectedTripType as 'one-way' | 'round-trip',
+      fromAirport: fromAirport,
+      toAirport: toAirport,
+      departureDate: departureDate?.toISOString().split('T')[0], // YYYY-MM-DD format
+      returnDate: returnDate?.toISOString().split('T')[0], // YYYY-MM-DD format
+      passengers: 1
+    }
+    
+    try {
+      onSearching(true)
+      const { trips, meta } = await searchFlights(params)
+      onSearchResults(trips, meta, params)
+    } catch (error) {
+      console.error('Search failed:', error)
+    } finally {
+      onSearching(false)
+    }
+  }
+
   // Handle search button click
   const handleSearch = async () => {
     // Reset errors
@@ -84,27 +107,15 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
       return
     }
     
-    // Prepare search parameters
-    const searchParams: FlightSearchParams = {
-      tripType: selectedTripType as 'one-way' | 'round-trip',
-      fromAirport: fromAirport,
-      toAirport: toAirport,
-      departureDate: departureDate?.toISOString().split('T')[0], // YYYY-MM-DD format
-      returnDate: returnDate?.toISOString().split('T')[0], // YYYY-MM-DD format
-      passengers: 1
-    }
-    
-    try {
-      onSearching(true)
-      const trips = await searchFlights(searchParams)
-      onSearchResults(trips)
-    } catch (error) {
-      console.error('Search failed:', error)
-      // You could add error handling here (show toast, etc.)
-    } finally {
-      onSearching(false)
-    }
+    await performSearch()
   }
+
+  // Handle automatic search when searchParams change (for pagination)
+  useEffect(() => {
+    if (searchParams && searchParams.page) {
+      performSearch(searchParams)
+    }
+  }, [searchParams])
 
   return (
     <div className="flight-search-container">

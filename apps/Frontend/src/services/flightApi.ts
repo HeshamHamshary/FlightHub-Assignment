@@ -8,15 +8,27 @@ export interface FlightSearchParams {
   returnDate?: string
   tripType?: 'one-way' | 'round-trip'
   passengers?: number
+  page?: number
+}
+
+export interface PaginationMeta {
+  total: number
+  page: number
+  perPage: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  executionTimeMs: number
 }
 
 export interface FlightSearchResponse {
   status: string
   query: FlightSearchParams
   flights: Trip[]
+  meta: PaginationMeta
 }
 
-export const searchFlights = async (params: FlightSearchParams = {}): Promise<Trip[]> => {
+export const searchFlights = async (params: FlightSearchParams = {}): Promise<{trips: Trip[], meta: PaginationMeta}> => {
   try {
     // Build query string from params
     const queryParams = new URLSearchParams()
@@ -44,7 +56,7 @@ export const searchFlights = async (params: FlightSearchParams = {}): Promise<Tr
     const data: FlightSearchResponse = await response.json()
     
     // Parse the response into our Trip types
-    return data.flights.map((tripData: any) => ({
+    const trips = data.flights.map((tripData: any) => ({
       id: tripData.id,
       type: tripData.type,
       flights: tripData.flights.map((flight: any) => ({
@@ -79,6 +91,8 @@ export const searchFlights = async (params: FlightSearchParams = {}): Promise<Tr
       totalPrice: tripData.totalPrice,
       createdAt: tripData.createdAt,
     }))
+
+    return { trips, meta: data.meta }
   } catch (error) {
     console.error('Error fetching flights:', error)
     throw error

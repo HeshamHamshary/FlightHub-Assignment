@@ -15,6 +15,11 @@ class FlightController extends Controller
 
         $startTime = microtime(true);
         $tripType = $params['tripType'] ?? 'one-way';
+        
+        // Pagination parameters
+        $page = max(1, (int)($params['page'] ?? 1));
+        $perPage = 5;
+        $offset = ($page - 1) * $perPage;
 
         if ($tripType === 'round-trip') {
             $from = $params['fromAirport'] ?? null;
@@ -45,7 +50,11 @@ class FlightController extends Controller
             $trips = $this->buildOneWayTrips($flights);
         }
 
-        $formattedTrips = $this->formatTrips($trips);
+        // Apply pagination
+        $totalTrips = $trips->count();
+        $paginatedTrips = $trips->slice($offset, $perPage);
+        $formattedTrips = $this->formatTrips($paginatedTrips);
+        
         $executionTime = round((microtime(true) - $startTime) * 1000, 2);
 
         return response()->json([
@@ -53,7 +62,12 @@ class FlightController extends Controller
             'query'  => $params,
             'flights' => $formattedTrips->values(),
             'meta' => [
-                'total' => $trips->count(),
+                'total' => $totalTrips,
+                'page' => $page,
+                'perPage' => $perPage,
+                'totalPages' => ceil($totalTrips / $perPage),
+                'hasNextPage' => $page < ceil($totalTrips / $perPage),
+                'hasPreviousPage' => $page > 1,
                 'executionTimeMs' => $executionTime,
             ]
         ]);
