@@ -7,14 +7,5 @@ export const MAJOR_CITIES = {
     'TYO': "Tokyo", 
     'WAS': "Washington", 
     'LAX': "Los Angeles", 
-    'CHI': "Chicago", 
-    'MIA': "Miami", 
-    'DFW': "Dallas/Fort Worth", 
-    'ATL': "Atlanta", 
-    'SFO': "San Francisco", 
-    'DEN': "Denver", 
-    'SEA': "Seattle", 
-    'BOS': "Boston", 
-    'LAS': "Las Vegas", 
 } as const
   
