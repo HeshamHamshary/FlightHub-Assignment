@@ -3,6 +3,7 @@ import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { searchFlights, type FlightSearchParams } from '../services/flightApi'
 import { type Trip } from '../types/flightTypes'
+import { MAJOR_CITIES } from '../utils/constants'
 
 // Reusable error message component
 const ErrorMessage = ({ show }: { show: boolean }) => {
@@ -19,16 +20,16 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
   // State for trip type selection
   const [selectedTripType, setSelectedTripType] = useState('round-trip')
   
-  // State for form inputs
+  // State for form inputs - now using airport codes
   const [departureDate, setDepartureDate] = useState<Date | null>(null)
   const [returnDate, setReturnDate] = useState<Date | null>(null)
-  const [fromCity, setFromCity] = useState('')
-  const [toCity, setToCity] = useState('')
+  const [fromAirport, setFromAirport] = useState('')
+  const [toAirport, setToAirport] = useState('')
   
   // State for validation errors
   const [errors, setErrors] = useState({
-    fromCity: false,
-    toCity: false,
+    fromAirport: false,
+    toAirport: false,
     departureDate: false,
     returnDate: false
   })
@@ -47,9 +48,9 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
 
   // Handle swap button click
   const handleSwap = () => {
-    const tempCity = fromCity
-    setFromCity(toCity)
-    setToCity(tempCity)
+    const tempAirport = fromAirport
+    setFromAirport(toAirport)
+    setToAirport(tempAirport)
     
     // Add active state briefly
     setIsSwapActive(true)
@@ -60,16 +61,16 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
   const handleSearch = async () => {
     // Reset errors
     setErrors({
-      fromCity: false,
-      toCity: false,
+      fromAirport: false,
+      toAirport: false,
       departureDate: false,
       returnDate: false
     })
     
     // Validate required fields
     const newErrors = {
-      fromCity: !fromCity.trim(),
-      toCity: !toCity.trim(),
+      fromAirport: !fromAirport,
+      toAirport: !toAirport,
       departureDate: !departureDate,
       returnDate: selectedTripType === 'round-trip' && !returnDate
     }
@@ -86,8 +87,8 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
     // Prepare search parameters
     const searchParams: FlightSearchParams = {
       tripType: selectedTripType as 'one-way' | 'round-trip',
-      fromAirport: fromCity,
-      toAirport: toCity,
+      fromAirport: fromAirport,
+      toAirport: toAirport,
       departureDate: departureDate?.toISOString().split('T')[0], // YYYY-MM-DD format
       returnDate: returnDate?.toISOString().split('T')[0], // YYYY-MM-DD format
       passengers: 1
@@ -131,17 +132,24 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
           {/* From field */}
           <div className="form-field">
             <label>Leaving from</label>
-            <div className={`input-container ${errors.fromCity ? 'error' : ''}`}>
+            <div className={`input-container ${errors.fromAirport ? 'error' : ''}`}>
               <span className="icon">✈️</span>
-              <input 
-                type="text" 
-                placeholder="Enter departure city" 
-                value={fromCity}
-                onChange={(e) => setFromCity(e.target.value)}
-              />
-              <span className="clear-icon" onClick={() => setFromCity('')}>×</span>
+              <select 
+                value={fromAirport}
+                onChange={(e) => setFromAirport(e.target.value)}
+                className="city-select"
+              >
+                <option value="">Select departure city</option>
+                {Object.entries(MAJOR_CITIES)
+                  .filter(([code]) => code !== toAirport) // Filter out the destination airport
+                  .map(([code, city]) => (
+                    <option key={code} value={code}>
+                      {code} {city}
+                    </option>
+                  ))}
+              </select>
             </div>
-            <ErrorMessage show={errors.fromCity} />
+            <ErrorMessage show={errors.fromAirport} />
           </div>
 
           {/* Swap button */}
@@ -150,17 +158,24 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
           {/* To field */}
           <div className="form-field">
             <label>Going to</label>
-            <div className={`input-container ${errors.toCity ? 'error' : ''}`}>
+            <div className={`input-container ${errors.toAirport ? 'error' : ''}`}>
               <span className="icon">✈️</span>
-              <input 
-                type="text" 
-                placeholder="Enter destination city" 
-                value={toCity}
-                onChange={(e) => setToCity(e.target.value)}
-              />
-              <span className="clear-icon" onClick={() => setToCity('')}>×</span>
+              <select 
+                value={toAirport}
+                onChange={(e) => setToAirport(e.target.value)}
+                className="city-select"
+              >
+                <option value="">Select destination city</option>
+                {Object.entries(MAJOR_CITIES)
+                  .filter(([code]) => code !== fromAirport) // Filter out the departure airport
+                  .map(([code, city]) => (
+                    <option key={code} value={code}>
+                      {code} {city}
+                    </option>
+                  ))}
+              </select>
             </div>
-            <ErrorMessage show={errors.toCity} />
+            <ErrorMessage show={errors.toAirport} />
           </div>
 
           {/* Departure date */}
