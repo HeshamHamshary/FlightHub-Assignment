@@ -9,4 +9,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('/flight/search', [FlightController::class, 'search']);
+Route::get('/flight/search/available-airlines', [FlightController::class, 'getAvailableAirlines']);
 

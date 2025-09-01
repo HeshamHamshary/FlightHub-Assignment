@@ -11,5 +11,13 @@ class Airline extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = ['id','iata_code','name'];
+
+    /**
+     * Get the flights for this airline
+     */
+    public function flights()
+    {
+        return $this->hasMany(Flight::class, 'airline_id');
+    }
 }
 

@@ -13,7 +13,7 @@ jest.mock('../../services/flightApi', () => ({
   searchFlights: jest.fn(() => Promise.resolve({ trips: [], meta: {} }))
 }))
 
-// Mock the react-datepicker library with a simple input
+// Mock the react-datepicker library with a simple inp  ut
 jest.mock('react-datepicker', () => {
   return function MockDatePicker({ selected, onChange, placeholderText }: any) {
     return (

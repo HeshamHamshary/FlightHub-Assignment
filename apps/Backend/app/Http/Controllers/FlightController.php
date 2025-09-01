@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Flight;
+use App\Models\Airline;
 
 class FlightController extends Controller
 {
@@ -27,6 +29,7 @@ class FlightController extends Controller
             $depDate = $params['departureDate'] ?? null;
             $retDate = $params['returnDate'] ?? null;
 
+            // Get all outbound and return flights (no airline filtering at query level)
             $outboundFlights = $this->buildFlightQuery([
                 'fromAirport' => $from,
                 'toAirport' => $to,
@@ -39,12 +42,14 @@ class FlightController extends Controller
                 'date' => $retDate,
             ])->get();
 
-            $trips = $this->combineRoundTrips($outboundFlights, $returnFlights);
+            $preferredAirline = $params['preferredAirline'] ?? null;
+            $trips = $this->combineRoundTrips($outboundFlights, $returnFlights, $preferredAirline);
         } else {
             $flights = $this->buildFlightQuery([
                 'fromAirport' => $params['fromAirport'] ?? null,
                 'toAirport' => $params['toAirport'] ?? null,
                 'date' => $params['departureDate'] ?? null,
+                'preferredAirline' => $params['preferredAirline'] ?? null,
             ])->get();
 
             $trips = $this->buildOneWayTrips($flights);
@@ -91,8 +96,9 @@ class FlightController extends Controller
 
     /**
      * Build round-trip combinations from two explicit flight sets
+     * Filters to only include trips where either flight matches preferred airline
      */
-    private function combineRoundTrips($outboundFlights, $returnFlights)
+    private function combineRoundTrips($outboundFlights, $returnFlights, $preferredAirline = null)
     {
         $trips = collect();
 
@@ -102,6 +108,17 @@ class FlightController extends Controller
                 $returnDateTime = $returnFlight->departure_date . ' ' . $returnFlight->departure_time;
 
                 if (strtotime($returnDateTime) > strtotime($outboundDateTime)) {
+                    // If preferred airline is specified, filter to only include trips with at least one matching flight
+                    if ($preferredAirline) {
+                        $hasPreferredAirline = ($outboundFlight->airline->iata_code === $preferredAirline || 
+                                              $returnFlight->airline->iata_code === $preferredAirline);
+                        
+                        // Skip this combination if neither flight matches preferred airline
+                        if (!$hasPreferredAirline) {
+                            continue;
+                        }
+                    }
+                    
                     $trips->push([
                         'id' => 'round-' . $outboundFlight->id . '-' . $returnFlight->id,
                         'type' => 'round-trip',
@@ -133,6 +150,11 @@ class FlightController extends Controller
         }
         if (!empty($filters['date'])) {
             $query->where('departure_date', $filters['date']);
+        }
+        if (!empty($filters['preferredAirline'])) {
+            $query->whereHas('airline', function ($q) use ($filters) {
+                $q->where('iata_code', $filters['preferredAirline']);
+            });
         }
 
         return $query;
@@ -223,6 +245,52 @@ class FlightController extends Controller
         } catch (\Exception $e) {
             Log::warning('Duration calculation failed for flight ' . $flight->flight_number . ': ' . $e->getMessage());
             return 'N/A';
+        }
+    }
+
+
+
+    /**
+     * Get available airlines for search criteria
+     */
+    public function getAvailableAirlines(Request $request)
+    {
+        try {
+            // Build flight query conditions
+            $conditions = [['departure_date', '>=', now()->format('Y-m-d')]];
+            foreach (['fromAirport' => 'departure_airport', 'toAirport' => 'arrival_airport', 'departureDate' => 'departure_date'] as $param => $column) {
+                if ($value = $request->get($param)) $conditions[] = [$column, '=', $value];
+            }
+            
+            // Get airlines with matching flights, prioritize major airlines
+            $airlines = DB::table('flights')
+                ->join('airlines', 'flights.airline_id', '=', 'airlines.id')
+                ->where($conditions)
+                ->whereRaw("CONCAT(flights.departure_date, ' ', flights.departure_time) > ?", [now()])
+                ->select('airlines.iata_code as iataCode', 'airlines.name')
+                ->distinct()
+                ->orderByRaw("CASE WHEN airlines.iata_code IN ('" . implode("','", array_keys(config('constants.major_airlines'))) . "') THEN 0 ELSE 1 END")
+                ->orderBy('airlines.name')
+                ->limit(15)
+                ->get();
+
+            // Fallback if no results
+            if ($airlines->isEmpty()) {
+                $airlines = DB::table('airlines')
+                    ->whereIn('iata_code', array_keys(config('constants.major_airlines')))
+                    ->whereExists(function ($query) {
+                        $query->select(DB::raw(1))->from('flights')->whereColumn('flights.airline_id', 'airlines.id');
+                    })
+                    ->select('iata_code as iataCode', 'name')
+                    ->orderBy('name')
+                    ->limit(10)
+                    ->get();
+            }
+
+            return response()->json(['airlines' => $airlines]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch available airlines: ' . $e->getMessage());
+            return response()->json(['airlines' => []], 500);
         }
     }
 }

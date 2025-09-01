@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { searchFlights, type FlightSearchParams, type PaginationMeta } from '../services/flightApi'
+import { searchFlights, getAvailableAirlines, type FlightSearchParams, type PaginationMeta } from '../services/flightApi'
 import { type Trip } from '../types/flightTypes'
 import { MAJOR_AIRPORTS } from '../utils/constants'
 
@@ -26,6 +26,11 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
   const [returnDate, setReturnDate] = useState<Date | null>(null)
   const [fromAirport, setFromAirport] = useState('')
   const [toAirport, setToAirport] = useState('')
+  const [preferredAirline, setPreferredAirline] = useState('')
+  
+  // State for airlines data
+  const [airlines, setAirlines] = useState<Array<{iataCode: string, name: string}>>([])
+  const [loadingAirlines, setLoadingAirlines] = useState(false)
   
   // State for validation errors
   const [errors, setErrors] = useState({
@@ -66,6 +71,7 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
       toAirport: toAirport,
       departureDate: departureDate?.toISOString().split('T')[0], // YYYY-MM-DD format
       returnDate: returnDate?.toISOString().split('T')[0], // YYYY-MM-DD format
+      preferredAirline: preferredAirline || undefined, // Only include if selected
       passengers: 1
     }
     
@@ -109,6 +115,52 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
     
     await performSearch()
   }
+
+  // Check if search criteria is sufficient to load airlines
+  const hasSearchCriteria = () => {
+    const hasBasicCriteria = fromAirport && toAirport && departureDate
+    if (selectedTripType === 'round-trip') {
+      return hasBasicCriteria && returnDate
+    }
+    return hasBasicCriteria
+  }
+
+  // Load available airlines when search criteria changes
+  useEffect(() => {
+    const loadAvailableAirlines = async () => {
+      if (!hasSearchCriteria()) {
+        setAirlines([])
+        setPreferredAirline('') // Clear selection when criteria incomplete
+        return
+      }
+
+      setLoadingAirlines(true)
+      try {
+        const searchCriteria = {
+          tripType: selectedTripType as 'one-way' | 'round-trip',
+          fromAirport,
+          toAirport,
+          departureDate: departureDate?.toISOString().split('T')[0],
+          returnDate: returnDate?.toISOString().split('T')[0],
+        }
+        
+        const airlineData = await getAvailableAirlines(searchCriteria)
+        setAirlines(airlineData)
+        
+        // Clear preferred airline if it's no longer available
+        if (preferredAirline && !airlineData.find(a => a.iataCode === preferredAirline)) {
+          setPreferredAirline('')
+        }
+      } catch (error) {
+        console.error('Failed to load available airlines:', error)
+        setAirlines([])
+      } finally {
+        setLoadingAirlines(false)
+      }
+    }
+    
+    loadAvailableAirlines()
+  }, [selectedTripType, fromAirport, toAirport, departureDate, returnDate])
 
   // Handle automatic search when searchParams change (for pagination)
   useEffect(() => {
@@ -228,6 +280,37 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
               <ErrorMessage show={errors.returnDate} />
             </div>
           )}
+
+          {/* Preferred Airline - optional */}
+          <div className="form-field">
+            <label>Preferred airline <span className="optional">(optional)</span></label>
+            <div className={`input-container ${!hasSearchCriteria() ? 'disabled' : ''}`}>
+              <span className="icon">✈️</span>
+              <select 
+                value={preferredAirline}
+                onChange={(e) => setPreferredAirline(e.target.value)}
+                className="airline-select"
+                disabled={!hasSearchCriteria() || loadingAirlines}
+              >
+                {!hasSearchCriteria() ? (
+                  <option value="">Fill search criteria first</option>
+                ) : loadingAirlines ? (
+                  <option value="">Loading airlines...</option>
+                ) : airlines.length === 0 ? (
+                  <option value="">No airlines available</option>
+                ) : (
+                  <>
+                    <option value="">Any airline</option>
+                    {airlines.map((airline) => (
+                      <option key={airline.iataCode} value={airline.iataCode}>
+                        {airline.iataCode} - {airline.name}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
+            </div>
+          </div>
 
           {/* Search button */}
           <div className="search-button-container">

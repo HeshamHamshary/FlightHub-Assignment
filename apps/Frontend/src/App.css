@@ -223,6 +223,28 @@ html, body {
   font-weight: 500;
 }
 
+.form-field label .optional {
+  color: #999;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.airline-select {
+  border: none;
+  outline: none;
+  flex: 1;
+  margin-left: 0.5rem;
+  background: transparent;
+  color: black;
+  cursor: pointer;
+}
+
+.loading-text {
+  font-size: 0.75rem;
+  color: #999;
+  margin-left: 0.5rem;
+}
+
 .input-container {
   position: relative;
   display: flex;
@@ -245,6 +267,18 @@ html, body {
 .input-container.error {
   border-color: #dc3545;
   box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
+}
+
+.input-container.disabled {
+  background-color: #f8f9fa;
+  border-color: #e9ecef;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.input-container.disabled select {
+  cursor: not-allowed;
+  color: #6c757d;
 }
 
 .error-message {

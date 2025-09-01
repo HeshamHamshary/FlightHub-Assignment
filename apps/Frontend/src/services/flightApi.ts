@@ -7,6 +7,7 @@ export interface FlightSearchParams {
   departureDate?: string
   returnDate?: string
   tripType?: 'one-way' | 'round-trip'
+  preferredAirline?: string
   passengers?: number
   page?: number
 }
@@ -96,6 +97,37 @@ export const searchFlights = async (params: FlightSearchParams = {}): Promise<{t
     return { trips, meta: data.meta }
   } catch (error) {
     console.error('Error fetching flights:', error)
+    throw error
+  }
+}
+
+
+
+export const getAvailableAirlines = async (searchCriteria: Partial<FlightSearchParams>): Promise<Array<{iataCode: string, name: string}>> => {
+  try {
+    const queryParams = new URLSearchParams()
+    Object.entries(searchCriteria).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value.toString())
+      }
+    })
+
+    const url = `${API_ENDPOINTS.FLIGHT_SEARCH}/available-airlines?${queryParams.toString()}`
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.airlines || []
+  } catch (error) {
+    console.error('Error fetching available airlines:', error)
     throw error
   }
 }
