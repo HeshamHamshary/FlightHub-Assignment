@@ -59,10 +59,12 @@ class FlightSeeder extends Seeder
         ) {
             $rows = [];
 
-            for ($i = 0; $i < $NUM_FLIGHTS; $i++) {
-                $air = $airlineRows[random_int(0, $nAirlines - 1)];
-                $flightNumber = $air['iata_code'] . random_int(100, 999);
+            // Generate flights in pairs to ensure A→B and B→A routes exist
+            $generatedCount = 0;
 
+            while ($generatedCount < $NUM_FLIGHTS) {
+                $air = $airlineRows[random_int(0, $nAirlines - 1)];
+                
                 // Pick two distinct airports by index
                 $aIdx = random_int(0, $nAirports - 1);
                 do {
@@ -72,31 +74,55 @@ class FlightSeeder extends Seeder
                 $from = $airports[$aIdx];  // e.g., "YUL"
                 $to   = $airports[$bIdx];  // e.g., "LAX"
 
-                // Random date in next 365 days
-                $daysAhead = random_int(1, 365);
-                $depDate   = date('Y-m-d', $todayTs + 86400 * $daysAhead);
-
-                // Local times and duration
-                $depMins = $randDep(); 
-                $dur     = random_int(60, 720);  
-                $arrMins = ($depMins + $dur) % 1440;
-
-                // Simple distance-based price model
-                $price = round(50 + $dur * 0.6 + random_int(0, 50), 2);
+                // Generate outbound flight (A→B)
+                $outboundFlightNumber = $air['iata_code'].random_int(100, 999);
+                $outboundDaysAhead = random_int(1, 365);
+                $outboundDepDate = date('Y-m-d', $todayTs + 86400 * $outboundDaysAhead);
+                $outboundDepMins = $randDep();
+                $outboundDur = random_int(60, 720);
+                $outboundArrMins = ($outboundDepMins + $outboundDur) % 1440;
+                $outboundPrice = round(50 + $outboundDur * 0.6 + random_int(0, 50), 2);
 
                 $rows[] = [
                     'id'                => (string) Str::uuid(),
-                    'flight_number'     => $flightNumber,
+                    'flight_number'     => $outboundFlightNumber,
                     'airline_id'        => $air['id'],
                     'departure_airport' => $from,
                     'arrival_airport'   => $to,
-                    'departure_date'    => $depDate,
-                    'departure_time'    => $fmt($depMins),
-                    'arrival_time'      => $fmt($arrMins),
-                    'price'             => $price,
+                    'departure_date'    => $outboundDepDate,
+                    'departure_time'    => $fmt($outboundDepMins),
+                    'arrival_time'      => $fmt($outboundArrMins),
+                    'price'             => $outboundPrice,
                     'created_at'        => now(),
                     'updated_at'        => now(),
                 ];
+                $generatedCount++;
+
+                // Generate return flight (B→A) if we haven't reached the limit
+                if ($generatedCount < $NUM_FLIGHTS) {
+                    $returnFlightNumber = $air['iata_code'].random_int(100, 999);
+                    $returnDaysAhead = random_int(1, 365);
+                    $returnDepDate = date('Y-m-d', $todayTs + 86400 * $returnDaysAhead);
+                    $returnDepMins = $randDep();
+                    $returnDur = random_int(60, 720);
+                    $returnArrMins = ($returnDepMins + $returnDur) % 1440;
+                    $returnPrice = round(50 + $returnDur * 0.6 + random_int(0, 50), 2);
+
+                    $rows[] = [
+                        'id'                => (string) Str::uuid(),
+                        'flight_number'     => $returnFlightNumber,
+                        'airline_id'        => $air['id'],
+                        'departure_airport' => $to,      // B→A
+                        'arrival_airport'   => $from,    // B→A
+                        'departure_date'    => $returnDepDate,
+                        'departure_time'    => $fmt($returnDepMins),
+                        'arrival_time'      => $fmt($returnArrMins),
+                        'price'             => $returnPrice,
+                        'created_at'        => now(),
+                        'updated_at'        => now(),
+                    ];
+                    $generatedCount++;
+                }
 
                 // Batch insert 
                 if (count($rows) >= $BATCH_SIZE) {
