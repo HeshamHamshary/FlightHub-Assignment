@@ -53,14 +53,18 @@ class FlightController extends Controller
                 return false; // Skip trips with no future flights
             }
             
-            // Filter by departure airport
+            // Filter by departure airport using airport IATA code (e.g., YUL, YYZ)
             if (!empty($params['fromAirport'])) {
-                $flights = $flights->where('departure_airport', $params['fromAirport']);
+                $flights = $flights->filter(function ($flight) use ($params) {
+                    return $flight->departureAirport->iata_code === $params['fromAirport'];
+                });
             }
             
-            // Filter by arrival airport
+            // Filter by arrival airport using airport IATA code (e.g., YUL, YYZ)
             if (!empty($params['toAirport'])) {
-                $flights = $flights->where('arrival_airport', $params['toAirport']);
+                $flights = $flights->filter(function ($flight) use ($params) {
+                    return $flight->arrivalAirport->iata_code === $params['toAirport'];
+                });
             }
             
             // Filter by departure date
@@ -98,7 +102,7 @@ class FlightController extends Controller
                             'name' => $flight->airline->name,
                         ],
                         'departureAirport' => [
-                            'iataCode' => $flight->departure_airport,
+                            'iataCode' => $flight->departureAirport->iata_code,
                             'name' => $flight->departureAirport->name,
                             'city' => $flight->departureAirport->city,
                             'latitude' => $flight->departureAirport->latitude,
@@ -107,7 +111,7 @@ class FlightController extends Controller
                             'cityCode' => $flight->departureAirport->city_code,
                         ],
                         'arrivalAirport' => [
-                            'iataCode' => $flight->arrival_airport,
+                            'iataCode' => $flight->arrivalAirport->iata_code,
                             'name' => $flight->arrivalAirport->name,
                             'city' => $flight->arrivalAirport->city,
                             'latitude' => $flight->arrivalAirport->latitude,
