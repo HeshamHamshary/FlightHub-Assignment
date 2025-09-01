@@ -175,6 +175,7 @@ class FlightController extends Controller
                         'departureDate' => $flight->departure_date,
                         'departureTime' => $flight->departure_time,
                         'arrivalTime' => $flight->arrival_time,
+                        'duration' => $this->calculateFlightDuration($flight),
                         'price' => $flight->price,
                     ];
                 })->toArray(),
@@ -182,5 +183,14 @@ class FlightController extends Controller
                 'createdAt' => $trip['createdAt'],
             ];
         });
+    }
+
+    /**
+     * Calculate flight duration with timezone awareness
+     */
+    private function calculateFlightDuration($flight)
+    {
+        // TODO: Implement this
+        return "N/A";
     }
 }

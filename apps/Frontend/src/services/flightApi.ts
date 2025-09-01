@@ -85,6 +85,7 @@ export const searchFlights = async (params: FlightSearchParams = {}): Promise<{t
         },
         departureTime: flight.departureTime,
         arrivalTime: flight.arrivalTime,
+        duration: flight.duration,
         price: flight.price,
         departureDate: flight.departureDate,
       })),

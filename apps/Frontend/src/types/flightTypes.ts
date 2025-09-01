@@ -46,6 +46,8 @@ export interface Flight {
   departureTime: string
   /** Arrival time in the arrival airport's timezone */
   arrivalTime: string
+  /** Flight duration (e.g., "2h 30m") calculated with timezone awareness */
+  duration: string
   /** Price for a single passenger in neutral currency */
   price: number
 }

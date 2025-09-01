@@ -69,6 +69,7 @@ const mockTrip1: Trip = {
       departureDate: '2025-10-03',
       departureTime: '08:00',
       arrivalTime: '09:30',
+      duration: '1h 30m',
       price: 299.99
     }
   ],
@@ -105,6 +106,7 @@ const mockTrip2: Trip = {
       departureDate: '2025-10-05',
       departureTime: '14:00',
       arrivalTime: '18:30',
+      duration: '4h 30m',
       price: 450.00
     },
     // Return flight: LAX -> YVR
@@ -132,6 +134,7 @@ const mockTrip2: Trip = {
       departureDate: '2025-10-12',
       departureTime: '10:30',
       arrivalTime: '15:00',
+      duration: '4h 30m',
       price: 475.00
     }
   ],

@@ -21,7 +21,7 @@ const FlightRoute = ({ flight }: { flight: Flight }) => (
       
       <div className="flight-path">
         <div className="departure-date">{flight.departureDate}</div>
-        <div className="duration">20h 40m</div>
+        <div className="duration">{flight.duration}</div>
       </div>
       
       <div className="arrival">
