@@ -3,7 +3,7 @@ import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { searchFlights, type FlightSearchParams } from '../services/flightApi'
 import { type Trip } from '../types/flightTypes'
-import { MAJOR_CITIES } from '../utils/constants'
+import { MAJOR_AIRPORTS } from '../utils/constants'
 
 // Reusable error message component
 const ErrorMessage = ({ show }: { show: boolean }) => {
@@ -139,8 +139,8 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
                 onChange={(e) => setFromAirport(e.target.value)}
                 className="city-select"
               >
-                <option value="">Select departure city</option>
-                {Object.entries(MAJOR_CITIES)
+                <option value="">Departure airport</option>
+                {Object.entries(MAJOR_AIRPORTS)
                   .filter(([code]) => code !== toAirport) // Filter out the destination airport
                   .map(([code, city]) => (
                     <option key={code} value={code}>
@@ -165,8 +165,8 @@ function FlightSearch({ onSearchResults, onSearching }: FlightSearchProps) {
                 onChange={(e) => setToAirport(e.target.value)}
                 className="city-select"
               >
-                <option value="">Select destination city</option>
-                {Object.entries(MAJOR_CITIES)
+                <option value="">Destination airport</option>
+                {Object.entries(MAJOR_AIRPORTS)
                   .filter(([code]) => code !== fromAirport) // Filter out the departure airport
                   .map(([code, city]) => (
                     <option key={code} value={code}>
