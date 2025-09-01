@@ -12,128 +12,138 @@ class FlightSeeder extends Seeder
 {
     public function run(): void
     {
-        $NUM_FLIGHTS = 10000;     // how many flights to generate
-        $BATCH_SIZE  = 1000;     // insert batch size
 
-        // 1) Load only what we need, once
-        $airports = Airport::whereNotNull('iata_code')
-            ->pluck('iata_code')  
-            ->values()
-            ->all();
+        $BATCH_SIZE = 300; // Smaller batch size for better memory management
+        // Get major airports from constants
+        $majorAirports = config('constants.major_airports');
+        
+        if (empty($majorAirports)) {
+            $this->command->warn("Major airports not found in constants. Using fallback airports.");
+            $majorAirports = [
+                'YUL' => 'Montreal-Trudeau',
+                'YYZ' => 'Toronto-Pearson',
+                'JFK' => 'New York-JFK',
+                'LHR' => 'London-Heathrow',
+                'CDG' => 'Paris-Charles de Gaulle',
+                'NRT' => 'Tokyo-Narita',
+                'DCA' => 'Washington-Reagan',
+                'LAX' => 'Los Angeles',
+            ];
+        }
 
-        $airlineRows = Airline::whereNotNull('iata_code')
-            ->get(['id','iata_code']) 
-            ->toArray();
-
-        if (count($airports) < 2 || count($airlineRows) === 0) {
-            $this->command->warn("Need at least 2 airports and 1 airline to seed flights.");
+        // Get airlines
+        $airlines = Airline::whereNotNull('iata_code')->get(['id', 'iata_code'])->toArray();
+        
+        if (empty($airlines)) {
+            $this->command->warn("No airlines found. Cannot seed flights.");
             return;
         }
 
+        // Calculate date range: from today to January 1st, 2026
+        $startDate = now()->startOfDay();
+        $endDate = \Carbon\Carbon::create(2026, 1, 1)->endOfDay();
+        $totalDays = $startDate->diffInDays($endDate) + 1;
+
         DB::disableQueryLog();
 
-        $nAirports = count($airports);
-        $nAirlines = count($airlineRows);
-        $todayTs   = time();
-
-        // small helper to format minutes to "HH:MM"
-        $fmt = static function (int $mins): string {
-            $mins = ($mins % 1440 + 1440) % 1440;
-            $h = intdiv($mins, 60);
-            $m = $mins % 60;
-            return sprintf('%02d:%02d', $h, $m);
-        };
-
-        // random minutes block
-        $randDep = static function (): int {
-            $start = 5 * 60;  // 05:00
-            $end   = 22 * 60 + 55; // 22:55
-            $step  = 5;
-            $slots = intdiv(($end - $start), $step) + 1;
-            return $start + (random_int(0, $slots - 1) * $step);
-        };
-
-        DB::transaction(function () use (
-            $NUM_FLIGHTS, $BATCH_SIZE, $airports, $airlineRows, $nAirports, $nAirlines,
-            $todayTs, $fmt, $randDep
-        ) {
+        // Use transaction for data integrity
+        DB::transaction(function () use ($majorAirports, $airlines, $startDate, $endDate, $totalDays, $BATCH_SIZE) {
             $rows = [];
+            $totalFlights = 0;
+            $currentDate = $startDate->copy();
+            $processedDays = 0;
 
-            // Generate flights in pairs to ensure A→B and B→A routes exist
-            $generatedCount = 0;
-
-            while ($generatedCount < $NUM_FLIGHTS) {
-                $air = $airlineRows[random_int(0, $nAirlines - 1)];
+            while ($currentDate->lte($endDate)) {
+                $dateString = $currentDate->format('Y-m-d');
+                $processedDays++;
                 
-                // Pick two distinct airports by index
-                $aIdx = random_int(0, $nAirports - 1);
-                do {
-                    $bIdx = random_int(0, $nAirports - 1);
-                } while ($bIdx === $aIdx);
+                // Calculate and log percentage complete
+                $percentageComplete = round(($processedDays / $totalDays) * 100, 1);
+                $this->command->info("Processing ({$percentageComplete}% complete)");
+                
+                // Generate flights between all major airports for this date
+                foreach (array_keys($majorAirports) as $fromAirport) {
+                    foreach (array_keys($majorAirports) as $toAirport) {
+                        // Skip same airport
+                        if ($fromAirport === $toAirport) {
+                            continue;
+                        }
 
-                $from = $airports[$aIdx];  // e.g., "YUL"
-                $to   = $airports[$bIdx];  // e.g., "LAX"
-
-                // Generate outbound flight (A→B)
-                $outboundFlightNumber = $air['iata_code'].random_int(100, 999);
-                $outboundDaysAhead = random_int(1, 365);
-                $outboundDepDate = date('Y-m-d', $todayTs + 86400 * $outboundDaysAhead);
-                $outboundDepMins = $randDep();
-                $outboundDur = random_int(60, 720);
-                $outboundArrMins = ($outboundDepMins + $outboundDur) % 1440;
-                $outboundPrice = round(50 + $outboundDur * 0.6 + random_int(0, 50), 2);
-
-                $rows[] = [
-                    'id'                => (string) Str::uuid(),
-                    'flight_number'     => $outboundFlightNumber,
-                    'airline_id'        => $air['id'],
-                    'departure_airport' => $from,
-                    'arrival_airport'   => $to,
-                    'departure_date'    => $outboundDepDate,
-                    'departure_time'    => $fmt($outboundDepMins),
-                    'arrival_time'      => $fmt($outboundArrMins),
-                    'price'             => $outboundPrice,
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
-                ];
-                $generatedCount++;
-
-                // Generate return flight (B→A) if we haven't reached the limit
-                if ($generatedCount < $NUM_FLIGHTS) {
-                    $returnFlightNumber = $air['iata_code'].random_int(100, 999);
-                    $returnDaysAhead = random_int(1, 365);
-                    $returnDepDate = date('Y-m-d', $todayTs + 86400 * $returnDaysAhead);
-                    $returnDepMins = $randDep();
-                    $returnDur = random_int(60, 720);
-                    $returnArrMins = ($returnDepMins + $returnDur) % 1440;
-                    $returnPrice = round(50 + $returnDur * 0.6 + random_int(0, 50), 2);
-
-                    $rows[] = [
-                        'id'                => (string) Str::uuid(),
-                        'flight_number'     => $returnFlightNumber,
-                        'airline_id'        => $air['id'],
-                        'departure_airport' => $to,      // B→A
-                        'arrival_airport'   => $from,    // B→A
-                        'departure_date'    => $returnDepDate,
-                        'departure_time'    => $fmt($returnDepMins),
-                        'arrival_time'      => $fmt($returnArrMins),
-                        'price'             => $returnPrice,
-                        'created_at'        => now(),
-                        'updated_at'        => now(),
-                    ];
-                    $generatedCount++;
+                        // Generate 20-25 flights per route per day to ensure minimum 20 search results
+                        $flightsPerRoute = random_int(20, 25);
+                        
+                        for ($i = 0; $i < $flightsPerRoute; $i++) {
+                            $airline = $airlines[random_int(0, count($airlines) - 1)];
+                            
+                            // Generate departure time between 06:00 and 22:00
+                            $departureHour = random_int(6, 22);
+                            $departureMinute = random_int(0, 59);
+                            $departureTime = sprintf('%02d:%02d', $departureHour, $departureMinute);
+                            
+                            // Flight duration between 1-12 hours
+                            $durationHours = random_int(1, 12);
+                            $durationMinutes = random_int(0, 59);
+                            
+                            // Calculate arrival time
+                            $departureDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $dateString . ' ' . $departureTime);
+                            $arrivalDateTime = $departureDateTime->copy()->addHours($durationHours)->addMinutes($durationMinutes);
+                            $arrivalTime = $arrivalDateTime->format('H:i');
+                            
+                            // Price based on duration and distance (simplified)
+                            $basePrice = 100;
+                            $durationMultiplier = $durationHours * 15;
+                            $randomVariation = random_int(-20, 50);
+                            $price = round($basePrice + $durationMultiplier + $randomVariation, 2);
+                            
+                            $rows[] = [
+                                'id' => (string) Str::uuid(),
+                                'flight_number' => $airline['iata_code'] . random_int(100, 999),
+                                'airline_id' => $airline['id'],
+                                'departure_airport' => $fromAirport,
+                                'arrival_airport' => $toAirport,
+                                'departure_date' => $dateString,
+                                'departure_time' => $departureTime,
+                                'arrival_time' => $arrivalTime,
+                                'price' => $price,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                            
+                            $totalFlights++;
+                            
+                            // Batch insert when we reach batch size
+                            if (count($rows) >= $BATCH_SIZE) {
+                                DB::table('flights')->insert($rows);
+                                $rows = [];
+                                
+                                // More frequent memory cleanup
+                                if ($totalFlights % 2000 === 0) {
+                                    gc_collect_cycles();
+                                }
+                            }
+                        }
+                    }
                 }
-
-                // Batch insert 
-                if (count($rows) >= $BATCH_SIZE) {
-                    DB::table('flights')->insert($rows);
-                    $rows = [];
+                
+                $currentDate->addDay();
+                
+                // Memory cleanup after each day
+                if ($processedDays % 5 === 0) {
+                    gc_collect_cycles();
                 }
             }
-
+            
+            // Insert remaining rows
             if (!empty($rows)) {
                 DB::table('flights')->insert($rows);
+                $totalFlights += count($rows);
             }
+            
+            $this->command->info("Flight seeding completed! Total flights generated: {$totalFlights}");
+            
+            // Calculate expected trips
+            $routesPerDay = count($majorAirports) * (count($majorAirports) - 1); // Exclude same airport
+            $totalRoutes = $routesPerDay * $totalDays;
         });
     }
 }

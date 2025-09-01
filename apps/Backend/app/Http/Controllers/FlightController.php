@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Models\Trip;
 use App\Models\Flight;
 
 class FlightController extends Controller
@@ -14,87 +13,56 @@ class FlightController extends Controller
         // Access query params 
         $params = $request->all();
 
-        // Start with available trips
-        $query = Trip::available();
+        // Start with available flights (not departed)
+        $query = Flight::where('departure_date', '>=', now()->format('Y-m-d'))
+            ->whereRaw("CONCAT(departure_date, ' ', departure_time) > ?", [now()])
+            ->with(['airline', 'departureAirport', 'arrivalAirport']);
 
-        // Filter by trip type if specified
-        if (!empty($params['tripType'])) {
-            $query->where('type', $params['tripType']);
+        // Filter by departure airport using airport IATA code
+        if (!empty($params['fromAirport'])) {
+            $query->where('departure_airport', $params['fromAirport']);
+        }
+        
+        // Filter by arrival airport using airport IATA code
+        if (!empty($params['toAirport'])) {
+            $query->where('arrival_airport', $params['toAirport']);
+        }
+        
+        // Filter by departure date
+        if (!empty($params['departureDate'])) {
+            $query->where('departure_date', $params['departureDate']);
         }
 
-        // Get the filtered trips
-        $trips = $query->limit(50)->get();
-
-        // Collect all flight IDs from trips
-        $allFlightIds = $trips->flatMap(function ($trip) {
-            return $trip->flight_ids ?? [];
-        })->unique()->values();
-
-        // Load all flights in one query
-        $allFlights = Flight::whereIn('id', $allFlightIds)
-            ->with(['airline', 'departureAirport', 'arrivalAirport'])
-            ->get()
-            ->keyBy('id');
-
-        // Filter by flight criteria after loading trips
-        $filteredTrips = $trips->filter(function ($trip) use ($params, $allFlights) {
-            // Get flights for this trip from the pre-loaded collection
-            $flights = collect($trip->flight_ids ?? [])->map(function ($flightId) use ($allFlights) {
-                return $allFlights->get($flightId);
-            })->filter();
-            
-            // Filter out departed flights first
-            $flights = $flights->filter(function ($flight) {
-                $departureDateTime = $flight->departure_date . ' ' . $flight->departure_time;
-                return strtotime($departureDateTime) > time();
-            });
-            
-            if ($flights->isEmpty()) {
-                return false; // Skip trips with no future flights
+        // Group flights by trip type
+        $tripType = $params['tripType'] ?? 'one-way';
+        
+        // Process flights in chunks to avoid memory issues
+        $allTrips = collect();
+        $chunkSize = 1000; // Process 1000 flights at a time
+        $startTime = microtime(true);
+        $maxExecutionTime = 25; // Leave 5 seconds buffer for response formatting
+        
+        $query->chunk($chunkSize, function ($flights) use (&$allTrips, $tripType, $params, $startTime, $maxExecutionTime) {
+            // Check if we're approaching time limit
+            if ((microtime(true) - $startTime) > $maxExecutionTime) {
+                return false; // Stop chunking
             }
             
-            // Filter by departure airport using airport IATA code (e.g., YUL, YYZ)
-            if (!empty($params['fromAirport'])) {
-                $flights = $flights->filter(function ($flight) use ($params) {
-                    return $flight->departureAirport->iata_code === $params['fromAirport'];
-                });
+            if ($tripType === 'round-trip') {
+                $chunkTrips = $this->buildRoundTrips($flights, $params);
+            } else {
+                $chunkTrips = $this->buildOneWayTrips($flights);
             }
             
-            // Filter by arrival airport using airport IATA code (e.g., YUL, YYZ)
-            if (!empty($params['toAirport'])) {
-                $flights = $flights->filter(function ($flight) use ($params) {
-                    return $flight->arrivalAirport->iata_code === $params['toAirport'];
-                });
-            }
-            
-            // Filter by departure date
-            if (!empty($params['departureDate'])) {
-                $flights = $flights->where('departure_date', $params['departureDate']);
-            }
-            
-            // Filter by return date (for round-trips)
-            if (!empty($params['returnDate']) && $params['tripType'] === 'round-trip') {
-                $flights = $flights->where('departure_date', $params['returnDate']);
-            }
-            
-            return $flights->count() > 0;
-        });
-
-        // Load relationships for the filtered trips
-        $trips = $filteredTrips->map(function ($trip) use ($allFlights) {
-            // Get flights for this trip from the pre-loaded collection
-            $trip->flights = collect($trip->flight_ids ?? [])->map(function ($flightId) use ($allFlights) {
-                return $allFlights->get($flightId);
-            })->filter();
-            return $trip;
+            $allTrips = $allTrips->merge($chunkTrips);
         });
 
         // Transform trips to match your frontend expectations
-        $formattedTrips = $trips->map(function ($trip) {
+        $formattedTrips = $allTrips->map(function ($trip) {
             return [
-                'id' => $trip->id,
-                'type' => $trip->type,
-                'flights' => $trip->flights->map(function ($flight) {
+                'id' => $trip['id'],
+                'type' => $trip['type'],
+                'flights' => $trip['flights']->map(function ($flight) {
                     return [
                         'flightNumber' => $flight->flight_number,
                         'airline' => [
@@ -125,15 +93,79 @@ class FlightController extends Controller
                         'price' => $flight->price,
                     ];
                 })->toArray(),
-                'totalPrice' => $trip->total_price,
-                'createdAt' => $trip->created_at->toISOString(),
+                'totalPrice' => $trip['totalPrice'],
+                'createdAt' => $trip['createdAt'],
             ];
         });
+
+        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
 
         return response()->json([
             'status' => 'ok',
             'query'  => $params,
-            'flights' => $formattedTrips->values(), // Convert to array
+            'flights' => $formattedTrips->values(),
+            'meta' => [
+                'total' => $allTrips->count(),
+                'executionTimeMs' => $executionTime,
+                'chunkSize' => $chunkSize,
+                'timeLimitReached' => $executionTime > ($maxExecutionTime * 1000)
+            ]
         ]);
+    }
+
+    /**
+     * Build one-way trips from individual flights
+     */
+    private function buildOneWayTrips($flights)
+    {
+        return $flights->map(function ($flight) {
+            return [
+                'id' => 'one-way-' . $flight->id,
+                'type' => 'one-way',
+                'flights' => collect([$flight]),
+                'totalPrice' => $flight->price,
+                'createdAt' => $flight->created_at->toISOString(),
+            ];
+        });
+    }
+
+    /**
+     * Build round-trip combinations from available flights
+     */
+    private function buildRoundTrips($flights, $params)
+    {
+        $trips = collect();
+        
+        // Group flights by direction
+        $outboundFlights = $flights->filter(function ($flight) use ($params) {
+            return $flight->departure_airport === ($params['fromAirport'] ?? $flight->departure_airport) &&
+                   $flight->arrival_airport === ($params['toAirport'] ?? $flight->arrival_airport);
+        });
+        
+        $returnFlights = $flights->filter(function ($flight) use ($params) {
+            return $flight->departure_airport === ($params['toAirport'] ?? $flight->arrival_airport) &&
+                   $flight->arrival_airport === ($params['fromAirport'] ?? $flight->departure_airport);
+        });
+
+        // Create round-trip combinations
+        foreach ($outboundFlights as $outboundFlight) {
+            foreach ($returnFlights as $returnFlight) {
+                // Ensure return flight is after outbound flight
+                $outboundDateTime = $outboundFlight->departure_date . ' ' . $outboundFlight->departure_time;
+                $returnDateTime = $returnFlight->departure_date . ' ' . $returnFlight->departure_time;
+                
+                if (strtotime($returnDateTime) > strtotime($outboundDateTime)) {
+                    $trips->push([
+                        'id' => 'round-' . $outboundFlight->id . '-' . $returnFlight->id,
+                        'type' => 'round-trip',
+                        'flights' => collect([$outboundFlight, $returnFlight]),
+                        'totalPrice' => $outboundFlight->price + $returnFlight->price,
+                        'createdAt' => now()->toISOString(),
+                    ]);
+                }
+            }
+        }
+
+        return $trips;
     }
 }
