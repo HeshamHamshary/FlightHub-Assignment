@@ -72,7 +72,7 @@ class FlightController extends Controller
                 'totalPrice' => $flight->price,
                 'createdAt' => $flight->created_at->toISOString(),
             ];
-        });
+        })->sortBy('totalPrice');
     }
 
     /**
@@ -99,7 +99,7 @@ class FlightController extends Controller
             }
         }
 
-        return $trips;
+        return $trips->sortBy('totalPrice');
     }
 
     /**

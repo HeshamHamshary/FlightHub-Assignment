@@ -11,13 +11,8 @@ interface FlightListProps {
 // Main FlightList component
 function FlightList({ trips, isSearching }: FlightListProps) {
 
-  // Memoize sorted trips to prevent unnecessary re-sorting
-  const sortedTrips = useMemo(() => {
-    return [...trips].sort((a, b) => a.totalPrice - b.totalPrice)
-  }, [trips])
-
   // Memoize the empty state check
-  const hasNoTrips = useMemo(() => sortedTrips.length === 0, [sortedTrips.length])
+  const hasNoTrips = useMemo(() => trips.length === 0, [trips.length])
 
   return (
     <div className="flight-list-container">
@@ -44,7 +39,7 @@ function FlightList({ trips, isSearching }: FlightListProps) {
               <p>Use the search form above to find available flights.</p>
             </div>
           ) : (
-            sortedTrips.map((trip) => (
+            trips.map((trip) => (
               <FlightCard
                 key={trip.id}
                 trip={trip}
