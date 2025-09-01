@@ -190,7 +190,39 @@ class FlightController extends Controller
      */
     private function calculateFlightDuration($flight)
     {
-        // TODO: Implement this
-        return "N/A";
+        try {
+            // Create departure datetime in departure timezone
+            $departureDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i', 
+                $flight->departure_date . ' ' . $flight->departure_time,
+                $flight->departureAirport->timezone
+            );
+
+            // Create arrival datetime in arrival timezone (same date initially)
+            $arrivalDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i',
+                $flight->departure_date . ' ' . $flight->arrival_time,
+                $flight->arrivalAirport->timezone
+            );
+
+            // Convert both to UTC to calculate actual duration
+            $departureUTC = $departureDateTime->utc();
+            $arrivalUTC = $arrivalDateTime->utc();
+
+            // Handle overnight flights (arrival next day)
+            if ($arrivalUTC->lte($departureUTC)) {
+                $arrivalUTC->addDay();
+            }
+
+            // Calculate duration in minutes
+            $durationMinutes = $departureUTC->diffInMinutes($arrivalUTC);
+            
+            // Convert to hours and minutes
+            $hours = intval($durationMinutes / 60);
+            $minutes = $durationMinutes % 60;
+
+            return $hours . 'h ' . $minutes . 'm';
+        } catch (\Exception $e) {
+            Log::warning('Duration calculation failed for flight ' . $flight->flight_number . ': ' . $e->getMessage());
+            return 'N/A';
+        }
     }
 }
