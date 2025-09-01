@@ -38,5 +38,7 @@ start.bat
 
 
 ### Access
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://127.0.0.1:8000
+- **Frontend**: http://localhost:5173 (Vite default)
+- **Backend API**: http://127.0.0.1:8000 (or 8001 if 8000 is busy)
+
+> **Note**: The start scripts automatically detect available ports and display the correct URLs when servers start.
