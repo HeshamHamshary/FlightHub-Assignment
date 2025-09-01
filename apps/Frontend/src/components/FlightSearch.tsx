@@ -196,7 +196,7 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
               <span className="icon">📅</span>
               <DatePicker
                 selected={departureDate}
-                onChange={(date) => setDepartureDate(date)}
+                onChange={(date) => setDepartureDate(Array.isArray(date) ? date[0] : date)}
                 placeholderText="Select date"
                 dateFormat="EEE, MMM dd, yyyy"
                 minDate={new Date()}
@@ -216,7 +216,7 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
                 <span className="icon">📅</span>
                 <DatePicker
                   selected={returnDate}
-                  onChange={(date) => setReturnDate(date)}
+                  onChange={(date) => setReturnDate(Array.isArray(date) ? date[0] : date)}
                   placeholderText="Select date"
                   dateFormat="EEE, MMM dd, yyyy"
                   minDate={departureDate || new Date()}
