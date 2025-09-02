@@ -19,7 +19,7 @@ interface FlightSearchProps {
 
 function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSearchProps) {
   // State for trip type selection
-  const [selectedTripType, setSelectedTripType] = useState('round-trip')
+  const [selectedTripType, setSelectedTripType] = useState('one-way')
   
   // State for form inputs - now using airport codes
   const [departureDate, setDepartureDate] = useState<Date | null>(null)
@@ -49,6 +49,9 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
     // Clear return date when switching to one-way
     if (tripType === 'one-way') {
       setReturnDate(null)
+    } else {
+      // Clear preferred airline when switching to round-trip
+      setPreferredAirline('')
     }
   }
 
@@ -119,9 +122,7 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
   // Check if search criteria is sufficient to load airlines
   const hasSearchCriteria = () => {
     const hasBasicCriteria = fromAirport && toAirport && departureDate
-    if (selectedTripType === 'round-trip') {
-      return hasBasicCriteria && returnDate
-    }
+    // For round-trip, we don't need return date to load airlines since preferred airline is only for one-way
     return hasBasicCriteria
   }
 
@@ -281,36 +282,38 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
             </div>
           )}
 
-          {/* Preferred Airline - optional */}
-          <div className="form-field">
-            <label>Preferred airline <span className="optional">(optional)</span></label>
-            <div className={`input-container ${!hasSearchCriteria() ? 'disabled' : ''}`}>
-              <span className="icon">✈️</span>
-              <select 
-                value={preferredAirline}
-                onChange={(e) => setPreferredAirline(e.target.value)}
-                className="airline-select"
-                disabled={!hasSearchCriteria() || loadingAirlines}
-              >
-                {!hasSearchCriteria() ? (
-                  <option value="">Fill search criteria first</option>
-                ) : loadingAirlines ? (
-                  <option value="">Loading airlines...</option>
-                ) : airlines.length === 0 ? (
-                  <option value="">No airlines available</option>
-                ) : (
-                  <>
-                    <option value="">Any airline</option>
-                    {airlines.map((airline) => (
-                      <option key={airline.iataCode} value={airline.iataCode}>
-                        {airline.iataCode} - {airline.name}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
+          {/* Preferred Airline - only show for one-way trips */}
+          {selectedTripType === 'one-way' && (
+            <div className="form-field">
+              <label>Preferred airline <span className="optional">(optional)</span></label>
+              <div className={`input-container ${!hasSearchCriteria() ? 'disabled' : ''}`}>
+                <span className="icon">✈️</span>
+                <select 
+                  value={preferredAirline}
+                  onChange={(e) => setPreferredAirline(e.target.value)}
+                  className="airline-select"
+                  disabled={!hasSearchCriteria() || loadingAirlines}
+                >
+                  {!hasSearchCriteria() ? (
+                    <option value="">Fill search criteria first</option>
+                  ) : loadingAirlines ? (
+                    <option value="">Loading airlines...</option>
+                  ) : airlines.length === 0 ? (
+                    <option value="">No airlines available</option>
+                  ) : (
+                    <>
+                      <option value="">Any airline</option>
+                      {airlines.map((airline) => (
+                        <option key={airline.iataCode} value={airline.iataCode}>
+                          {airline.iataCode} - {airline.name}
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Search button */}
           <div className="search-button-container">
