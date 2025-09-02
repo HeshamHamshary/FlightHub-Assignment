@@ -45,6 +45,12 @@ if errorlevel 1 (
 ) else (
     for /f "tokens=*" %%i in ('node -v') do set NODE_VERSION=%%i
     echo [SUCCESS] Node.js !NODE_VERSION! found
+    
+    REM Check Node.js version (18+)
+    for /f "tokens=2 delims=." %%i in ('node -v') do set NODE_MAJOR=%%i
+    if !NODE_MAJOR! LSS 18 (
+        echo [WARNING] Node.js 18+ recommended, but continuing with !NODE_VERSION!
+    )
 )
 
 REM Check npm
@@ -92,17 +98,39 @@ echo [INFO] Running database migrations...
 call php artisan migrate --quiet
 if errorlevel 1 (
     echo [ERROR] Failed to run migrations
+    echo [INFO] This might be due to database connection issues
+    echo [INFO] Please check your .env file database settings
     pause
     exit /b 1
 )
 
-echo [INFO] Seeding database with sample data...
-echo [WARNING] This may take 1-2 minutes for 100,000+ flight records...
-call php artisan db:seed --quiet
-if errorlevel 1 (
-    echo [ERROR] Failed to seed database
-    pause
-    exit /b 1
+echo [INFO] Checking if database needs seeding...
+php artisan tinker --execute="echo App\Models\Flight::count();" > temp_count.txt 2>nul
+set /p FLIGHT_COUNT=<temp_count.txt
+del temp_count.txt
+
+if "%FLIGHT_COUNT%"=="" (
+    echo [INFO] Seeding database with sample data...
+    echo [WARNING] This may take 1-2 minutes for 100,000+ flight records...
+    call php artisan db:seed --quiet
+    if errorlevel 1 (
+        echo [ERROR] Failed to seed database
+        pause
+        exit /b 1
+    )
+) else (
+    if %FLIGHT_COUNT% GTR 1000 (
+        echo [SUCCESS] Database already seeded with %FLIGHT_COUNT% flights, skipping seeding
+    ) else (
+        echo [INFO] Seeding database with sample data...
+        echo [WARNING] This may take 1-2 minutes for 100,000+ flight records...
+        call php artisan db:seed --quiet
+        if errorlevel 1 (
+            echo [ERROR] Failed to seed database
+            pause
+            exit /b 1
+        )
+    )
 )
 
 echo [SUCCESS] Backend setup complete!
