@@ -4,6 +4,10 @@ setlocal
 REM FlightHub Assignment - Start Script for Windows
 REM Starts both backend and frontend servers
 
+REM Get the directory where this script is located
+set SCRIPT_DIR=%~dp0
+set PROJECT_ROOT=%SCRIPT_DIR%..
+
 echo.
 echo 🚀 Starting FlightHub Assignment...
 echo ==================================
@@ -19,7 +23,7 @@ if errorlevel 1 (
 )
 
 echo [INFO] Checking database setup...
-cd apps\Backend
+cd "%PROJECT_ROOT%\apps\Backend"
 
 REM Check if database has flights
 php artisan tinker --execute="echo App\Models\Flight::count();" > temp_count.txt 2>nul
@@ -29,10 +33,10 @@ del temp_count.txt
 if "%FLIGHT_COUNT%"=="" (
     echo.
     echo ❌ [ERROR] Database not set up or has insufficient data!
-    echo ❌ [ERROR] Please run setup.bat first to set up the database.
+    echo ❌ [ERROR] Please run scripts\setup.bat first to set up the database.
     echo.
     echo Run this command:
-    echo   setup.bat
+    echo   scripts\setup.bat
     echo.
     pause
     exit /b 1
@@ -47,7 +51,7 @@ REM Wait for backend to start
 timeout /t 3 /nobreak >nul
 
 echo [INFO] Starting Frontend...
-cd ..\Frontend
+cd "%PROJECT_ROOT%\apps\Frontend"
 
 REM Start frontend in new window
 start "FlightHub Frontend" cmd /k "npm run dev"

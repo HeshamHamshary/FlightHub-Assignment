@@ -16,10 +16,10 @@ git clone <your-repo-url>
 cd FlightHub-Assignment
 
 # macOS/Linux
-./setup.sh
+./scripts/setup.sh
 
 # Windows
-setup.bat
+scripts/setup.bat
 ```
 
 
@@ -29,10 +29,10 @@ setup.bat
 **Automated start (both servers)**
 ```bash
 # macOS/Linux
-./start.sh
+./scripts/start.sh
 
 # Windows  
-start.bat
+scripts/start.bat
 ```
 
 

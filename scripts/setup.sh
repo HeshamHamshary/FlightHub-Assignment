@@ -5,6 +5,10 @@
 
 set -e  # Exit on any error
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
 echo "🚀 FlightHub Assignment - Automated Setup"
 echo "========================================"
 
@@ -82,7 +86,7 @@ echo ""
 
 # Setup Backend
 print_status "Setting up Backend (Laravel API)..."
-cd apps/Backend
+cd "$PROJECT_ROOT/apps/Backend"
 
 print_status "Installing PHP dependencies..."
 composer install --quiet
@@ -115,7 +119,7 @@ print_success "Backend setup complete!"
 
 # Setup Frontend
 print_status "Setting up Frontend (React App)..."
-cd ../Frontend
+cd "$PROJECT_ROOT/apps/Frontend"
 
 print_status "Installing Node.js dependencies..."
 npm install --silent
@@ -125,5 +129,5 @@ print_success "Frontend setup complete!"
 echo ""
 print_success "🎉 Setup Complete!"
 echo ""
-echo "To start the application: execute the start.sh script (macOS/Linux) or start.bat file (Windows)"
+echo "To start the application: execute the start.sh script"
 

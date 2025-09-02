@@ -267,9 +267,13 @@ class FlightController extends Controller
                 ->join('airlines', 'flights.airline_id', '=', 'airlines.id')
                 ->where($conditions)
                 ->whereRaw("CONCAT(flights.departure_date, ' ', flights.departure_time) > ?", [now()])
-                ->select('airlines.iata_code as iataCode', 'airlines.name')
+                ->select(
+                    'airlines.iata_code as iataCode', 
+                    'airlines.name',
+                    DB::raw("CASE WHEN airlines.iata_code IN ('" . implode("','", array_keys(config('constants.major_airlines'))) . "') THEN 0 ELSE 1 END as priority")
+                )
                 ->distinct()
-                ->orderByRaw("CASE WHEN airlines.iata_code IN ('" . implode("','", array_keys(config('constants.major_airlines'))) . "') THEN 0 ELSE 1 END")
+                ->orderBy('priority')
                 ->orderBy('airlines.name')
                 ->limit(15)
                 ->get();

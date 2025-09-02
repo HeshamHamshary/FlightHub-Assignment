@@ -5,6 +5,10 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
 echo "🚀 Starting FlightHub Assignment..."
 echo "=================================="
 
@@ -41,15 +45,15 @@ trap cleanup INT TERM EXIT
 
 # Check if database is set up
 print_info "Checking database setup..."
-cd apps/Backend
+cd "$PROJECT_ROOT/apps/Backend"
 
 if ! php artisan tinker --execute="echo App\Models\Flight::count();" 2>/dev/null | grep -E "^[0-9]+$" >/dev/null 2>&1; then
     echo ""
     echo "❌ [ERROR] Database not set up or has insufficient data!"
-    echo "❌ [ERROR] Please run ./setup.sh first to set up the database."
+    echo "❌ [ERROR] Please run ./scripts/setup.sh first to set up the database."
     echo ""
     echo "Run this command:"
-    echo "  ./setup.sh"
+    echo "  ./scripts/setup.sh"
     echo ""
     exit 1
 fi
@@ -67,7 +71,7 @@ sleep 2
 
 # Start frontend in background
 print_info "Starting Frontend..."
-cd ../Frontend
+cd "$PROJECT_ROOT/apps/Frontend"
 npm run dev &
 FRONTEND_PID=$!
 

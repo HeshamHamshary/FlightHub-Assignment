@@ -3,6 +3,10 @@ setlocal enabledelayedexpansion
 
 REM FlightHub Assignment - Automated Setup Script for Windows
 
+REM Get the directory where this script is located
+set SCRIPT_DIR=%~dp0
+set PROJECT_ROOT=%SCRIPT_DIR%..
+
 echo.
 echo 🚀 FlightHub Assignment - Automated Setup
 echo ========================================
@@ -58,7 +62,7 @@ echo.
 
 REM Setup Backend
 echo [INFO] Setting up Backend (Laravel API)...
-cd apps\Backend
+cd "%PROJECT_ROOT%\apps\Backend"
 
 echo [INFO] Installing PHP dependencies...
 call composer install --quiet
@@ -105,7 +109,7 @@ echo [SUCCESS] Backend setup complete!
 
 REM Setup Frontend
 echo [INFO] Setting up Frontend (React App)...
-cd ..\Frontend
+cd "%PROJECT_ROOT%\apps\Frontend"
 
 echo [INFO] Installing Node.js dependencies...
 call npm install --silent
@@ -120,20 +124,5 @@ echo [SUCCESS] Frontend setup complete!
 echo.
 echo [SUCCESS] 🎉 Setup Complete!
 echo.
-echo To start the application:
-echo.
-echo 1. Start Backend (in one terminal):
-echo    cd apps\Backend
-echo    php artisan serve --port=8000
-echo.
-echo 2. Start Frontend (in another terminal):
-echo    cd apps\Frontend
-echo    npm run dev
-echo.
-echo 3. Open your browser:
-echo    Frontend: http://localhost:5173
-echo    Backend API: http://127.0.0.1:8000
-echo.
-echo 🚀 Happy coding!
-echo.
+echo To start the application: run the start.bat script
 pause

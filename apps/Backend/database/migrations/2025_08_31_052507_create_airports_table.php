@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('airports', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->char('iata_code', 3)->nullable()->index();
+            $table->char('iata_code', 3)->unique()->index();
             $table->string('name', 160);
             $table->string('city', 120)->nullable();
             $table->decimal('lat', 9, 6)->nullable();

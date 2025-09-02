@@ -1,6 +1,10 @@
 // Environment configuration
+// Automatically detects local vs production environment
+// - Development: http://127.0.0.1:8000/api (localhost)
+// - Production: https://flight-trip-backend-3nxy4.ondigitalocean.app/api (DigitalOcean)
 export const config = {
-  API_URL_BASE: import.meta.env.VITE_API_URL_BASE || 'http://127.0.0.1:8000/api',
+  API_URL_BASE: import.meta.env.VITE_API_URL_BASE ||
+    (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : 'https://flight-trip-backend-3nxy4.ondigitalocean.app/api'),
 } as const
 
 // API endpoints
