@@ -42,3 +42,7 @@ scripts/start.bat
 - **Backend API**: http://127.0.0.1:8000 (or 8001 if 8000 is busy)
 
 > **Note**: The start scripts automatically detect available ports and display the correct URLs when servers start.
+
+## Documentation
+
+For detailed technical information, API endpoints, and architecture details, see [DOCUMENTATION.md](./DOCUMENTATION.md).
