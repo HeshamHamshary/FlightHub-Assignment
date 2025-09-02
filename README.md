@@ -1,6 +1,6 @@
 # FlightHub Assignment - Trip Builder
 
-A full-stack flight search and booking application built with Laravel (PHP) and React (TypeScript).
+A full-stack flight search application built with Laravel (PHP) and React (TypeScript).
 
 ## Quick Start
 
