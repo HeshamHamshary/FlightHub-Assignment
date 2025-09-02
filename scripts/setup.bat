@@ -63,20 +63,18 @@ if errorlevel 1 (
     echo [SUCCESS] npm found
 )
 
+REM Check Git
+where git >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Git not found. Please install Git first.
+    echo Download from: https://git-scm.com/download/win
+    pause
+    exit /b 1
+) else (
+    echo [SUCCESS] Git found
+)
+
 echo [SUCCESS] All prerequisites satisfied!
-echo.
-echo [INFO] Note: If you encounter 'ext-fileinfo' errors during PHP dependency installation,
-echo [INFO] you may need to enable the fileinfo extension in your php.ini file.
-echo [INFO] Location: C:\Program Files\php\php.ini
-echo [INFO] Change: ;extension=fileinfo to extension=fileinfo
-echo.
-echo [INFO] Note: If you encounter 'could not find driver' errors for SQLite,
-echo [INFO] you may need to enable SQLite extensions in your php.ini file.
-echo [INFO] Location: C:\Program Files\php\php.ini
-echo [INFO] Change: ;extension=pdo_sqlite to extension=pdo_sqlite
-echo [INFO] Change: ;extension=sqlite3 to extension=sqlite3
-echo [INFO] Then restart your system or PHP processes.
-echo.
 
 REM Setup Backend
 echo [INFO] Setting up Backend (Laravel API)...
@@ -86,6 +84,16 @@ echo [INFO] Installing PHP dependencies...
 call composer update --quiet
 if errorlevel 1 (
     echo [ERROR] Failed to install PHP dependencies
+    echo.
+    echo [INFO] This is likely due to missing PHP extensions. Here's what to do:
+    echo [INFO] 1. Open your php.ini file usually located at: C:\Program Files\php\php.ini
+    echo [INFO] 2. Find and enable these extensions by removing the semicolon (;):
+    echo [INFO]    - Change ;extension=fileinfo to extension=fileinfo
+    echo [INFO]    - Change ;extension=pdo_sqlite to extension=pdo_sqlite
+    echo [INFO]    - Change ;extension=sqlite3 to extension=sqlite3
+    echo [INFO] 3. Save the file and restart your system
+    echo [INFO] 4. Run this setup script again
+    echo.
     pause
     exit /b 1
 )

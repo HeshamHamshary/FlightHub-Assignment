@@ -81,21 +81,16 @@ else
     exit 1
 fi
 
+# Check Git
+if command_exists git; then
+    print_success "Git found"
+else
+    print_error "Git not found. Please install Git first."
+    print_error "Install with: sudo apt-get install git (Ubuntu/Debian) or brew install git (macOS)"
+    exit 1
+fi
+
 print_success "All prerequisites satisfied!"
-echo ""
-
-# PHP configuration guidance
-print_status "Note: If you encounter 'ext-fileinfo' errors during PHP dependency installation,"
-print_status "you may need to enable the fileinfo extension in your php.ini file."
-print_status "Common locations: /etc/php/*/cli/php.ini or /usr/local/etc/php.ini"
-print_status "Change: ;extension=fileinfo to extension=fileinfo"
-echo ""
-
-print_status "Note: If you encounter 'could not find driver' errors for SQLite,"
-print_status "you may need to enable SQLite extensions in your php.ini file."
-print_status "Change: ;extension=pdo_sqlite to extension=pdo_sqlite"
-print_status "Change: ;extension=sqlite3 to extension=sqlite3"
-print_status "Then restart your system or PHP processes."
 echo ""
 
 # Setup Backend
@@ -103,7 +98,20 @@ print_status "Setting up Backend (Laravel API)..."
 cd "$PROJECT_ROOT/apps/Backend"
 
 print_status "Installing PHP dependencies..."
-composer update --quiet
+if ! composer update --quiet; then
+    print_error "Failed to install PHP dependencies"
+    echo ""
+    print_status "This is likely due to missing PHP extensions. Here's what to do:"
+    print_status "1. Find your php.ini file location: php --ini"
+    print_status "2. Open the php.ini file and enable these extensions by removing the semicolon (;):"
+    print_status "   - Change ;extension=fileinfo to extension=fileinfo"
+    print_status "   - Change ;extension=pdo_sqlite to extension=pdo_sqlite"
+    print_status "   - Change ;extension=sqlite3 to extension=sqlite3"
+    print_status "3. Save the file and restart your system"
+    print_status "4. Run this setup script again"
+    echo ""
+    exit 1
+fi
 
 print_status "Setting up environment..."
 if [ ! -f .env ]; then
