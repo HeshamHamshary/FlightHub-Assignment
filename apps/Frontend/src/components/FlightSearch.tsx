@@ -318,7 +318,7 @@ function FlightSearch({ onSearchResults, onSearching, searchParams }: FlightSear
           {/* Search button */}
           <div className="search-button-container">
             <button className="search-button" onClick={handleSearch}>
-              🔍 Search
+              Search
             </button>
           </div>
         </div>

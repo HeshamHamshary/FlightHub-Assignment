@@ -329,7 +329,10 @@ html, body {
 
 .search-button-container {
   display: flex;
-  align-items: end;
+  justify-content: center;
+  align-items: center;
+  grid-column: 1 / -1;
+  margin-top: 1rem;
 }
 
 .search-button {
@@ -382,6 +385,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  width: 100%;
 }
 
 .flight-card {
@@ -393,6 +397,7 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 150px;
+  width: 100%;
 }
 
 .flight-content {
@@ -487,7 +492,7 @@ html, body {
 .flight-actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 1rem;
   min-width: 200px;
   justify-content: space-between;
@@ -495,7 +500,7 @@ html, body {
 }
 
 .price-info {
-  text-align: right;
+  text-align: center;
 }
 
 .price {
@@ -697,6 +702,44 @@ html, body {
     padding: 0 1rem;
     margin-top: -50px;
   }
+  
+  /* Flight cards responsive adjustments */
+  .flight-cards {
+    padding: 0 1rem;
+    max-width: 100%;
+  }
+  
+  .flight-card {
+    padding: 1rem;
+    margin: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .flight-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .route-info {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .flight-path {
+    margin: 1rem 0;
+  }
+  
+  .round-trip-flights .flight-route {
+    text-align: center;
+  }
+  
+  .airline-info {
+    justify-content: center;
+  }
 
   .search-card {
     padding: 1.5rem;
@@ -730,11 +773,13 @@ html, body {
     width: 100%;
   }
 
-  /* Swap button - center it between from/to fields */
+  /* Swap button - keep it in grid position between from/to fields */
   .swap-button {
-    order: 2;
+    order: unset;
     align-self: center;
-    margin: 0.5rem 0;
+    margin: 0;
+    grid-column: 2;
+    justify-self: center;
   }
 
   /* Search button - full width */
