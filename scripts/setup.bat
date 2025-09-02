@@ -65,13 +65,25 @@ if errorlevel 1 (
 
 echo [SUCCESS] All prerequisites satisfied!
 echo.
+echo [INFO] Note: If you encounter 'ext-fileinfo' errors during PHP dependency installation,
+echo [INFO] you may need to enable the fileinfo extension in your php.ini file.
+echo [INFO] Location: C:\Program Files\php\php.ini
+echo [INFO] Change: ;extension=fileinfo to extension=fileinfo
+echo.
+echo [INFO] Note: If you encounter 'could not find driver' errors for SQLite,
+echo [INFO] you may need to enable SQLite extensions in your php.ini file.
+echo [INFO] Location: C:\Program Files\php\php.ini
+echo [INFO] Change: ;extension=pdo_sqlite to extension=pdo_sqlite
+echo [INFO] Change: ;extension=sqlite3 to extension=sqlite3
+echo [INFO] Then restart your system or PHP processes.
+echo.
 
 REM Setup Backend
 echo [INFO] Setting up Backend (Laravel API)...
 cd "%PROJECT_ROOT%\apps\Backend"
 
 echo [INFO] Installing PHP dependencies...
-call composer install --quiet
+call composer update --quiet
 if errorlevel 1 (
     echo [ERROR] Failed to install PHP dependencies
     pause
@@ -94,6 +106,15 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo [INFO] Setting up SQLite database...
+if not exist "database\database.sqlite" (
+    echo [INFO] Creating SQLite database file...
+    type nul > "database\database.sqlite"
+    echo [SUCCESS] SQLite database file created
+) else (
+    echo [WARNING] SQLite database file already exists, skipping
+)
+
 echo [INFO] Running database migrations...
 call php artisan migrate --quiet
 if errorlevel 1 (
@@ -112,7 +133,8 @@ del temp_count.txt
 if "%FLIGHT_COUNT%"=="" (
     echo [INFO] Seeding database with sample data...
     echo [WARNING] This may take 1-2 minutes for 100,000+ flight records...
-    call php artisan db:seed --quiet
+    echo [INFO] Seeding progress will be shown below...
+    call php artisan db:seed --verbose
     if errorlevel 1 (
         echo [ERROR] Failed to seed database
         pause
@@ -124,7 +146,8 @@ if "%FLIGHT_COUNT%"=="" (
     ) else (
         echo [INFO] Seeding database with sample data...
         echo [WARNING] This may take 1-2 minutes for 100,000+ flight records...
-        call php artisan db:seed --quiet
+        echo [INFO] Seeding progress will be shown below...
+        call php artisan db:seed --verbose
         if errorlevel 1 (
             echo [ERROR] Failed to seed database
             pause
