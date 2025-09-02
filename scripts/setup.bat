@@ -63,6 +63,17 @@ if errorlevel 1 (
     echo [SUCCESS] npm found
 )
 
+REM Check Git
+where git >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Git not found. Please install Git first.
+    echo Download from: https://git-scm.com/download/win
+    pause
+    exit /b 1
+) else (
+    echo [SUCCESS] Git found
+)
+
 echo [SUCCESS] All prerequisites satisfied!
 echo.
 
@@ -71,7 +82,10 @@ echo [INFO] Setting up Backend (Laravel API)...
 cd "%PROJECT_ROOT%\apps\Backend"
 
 echo [INFO] Installing PHP dependencies...
-call composer install --quiet
+echo [INFO] This may take several minutes depending on your internet connection...
+echo [INFO] Progress will be shown below...
+echo.
+call composer update --no-interaction
 if errorlevel 1 (
     echo [ERROR] Failed to install PHP dependencies
     pause

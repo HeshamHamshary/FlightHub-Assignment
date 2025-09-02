@@ -81,6 +81,15 @@ else
     exit 1
 fi
 
+# Check Git
+if command_exists git; then
+    print_success "Git found"
+else
+    print_error "Git not found. Please install Git first."
+    print_error "Install with: sudo apt-get install git (Ubuntu/Debian) or brew install git (macOS)"
+    exit 1
+fi
+
 print_success "All prerequisites satisfied!"
 echo ""
 
@@ -89,7 +98,11 @@ print_status "Setting up Backend (Laravel API)..."
 cd "$PROJECT_ROOT/apps/Backend"
 
 print_status "Installing PHP dependencies..."
-composer install --quiet
+print_status "This may take several minutes depending on your internet connection..."
+print_status "Progress will be shown below..."
+echo ""
+
+composer update --no-interaction
 
 print_status "Setting up environment..."
 if [ ! -f .env ]; then
