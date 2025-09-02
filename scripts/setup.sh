@@ -98,20 +98,11 @@ print_status "Setting up Backend (Laravel API)..."
 cd "$PROJECT_ROOT/apps/Backend"
 
 print_status "Installing PHP dependencies..."
-if ! composer update --quiet; then
-    print_error "Failed to install PHP dependencies"
-    echo ""
-    print_status "This is likely due to missing PHP extensions. Here's what to do:"
-    print_status "1. Find your php.ini file location: php --ini"
-    print_status "2. Open the php.ini file and enable these extensions by removing the semicolon (;):"
-    print_status "   - Change ;extension=fileinfo to extension=fileinfo"
-    print_status "   - Change ;extension=pdo_sqlite to extension=pdo_sqlite"
-    print_status "   - Change ;extension=sqlite3 to extension=sqlite3"
-    print_status "3. Save the file and restart your system"
-    print_status "4. Run this setup script again"
-    echo ""
-    exit 1
-fi
+print_status "This may take several minutes depending on your internet connection..."
+print_status "Progress will be shown below..."
+echo ""
+
+composer update --no-interaction
 
 print_status "Setting up environment..."
 if [ ! -f .env ]; then
@@ -124,28 +115,17 @@ fi
 print_status "Generating application key..."
 php artisan key:generate --quiet
 
-print_status "Setting up SQLite database..."
-if [ ! -f "database/database.sqlite" ]; then
-    print_status "Creating SQLite database file..."
-    touch "database/database.sqlite"
-    print_success "SQLite database file created"
-else
-    print_warning "SQLite database file already exists, skipping"
-fi
-
 print_status "Running database migrations..."
 php artisan migrate --quiet
 
 print_status "Checking if database needs seeding..."
-FLIGHT_COUNT=$(php artisan tinker --execute="echo App\Models\Flight::count();" 2>/dev/null | tr -d '\n' || echo "")
-
-if [ -z "$FLIGHT_COUNT" ] || [ "$FLIGHT_COUNT" -lt 1000 ]; then
+if php artisan tinker --execute="echo App\Models\Flight::count();" 2>/dev/null | grep -q "^[0-9]*$" && [ "$(php artisan tinker --execute="echo App\Models\Flight::count();" 2>/dev/null | tr -d '\n')" -gt 1000 ]; then
+    FLIGHT_COUNT=$(php artisan tinker --execute="echo App\Models\Flight::count();" 2>/dev/null | tr -d '\n')
+    print_success "Database already seeded with $FLIGHT_COUNT flights, skipping seeding"
+else
     print_status "Seeding database with sample data..."
     print_warning "This may take 1-2 minutes for 100,000+ flight records..."
-    print_status "Seeding progress will be shown below..."
-    php artisan db:seed --verbose
-else
-    print_success "Database already seeded with $FLIGHT_COUNT flights, skipping seeding"
+    php artisan db:seed --quiet
 fi
 
 print_success "Backend setup complete!"
